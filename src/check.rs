@@ -6,6 +6,7 @@ use std::fmt;
 use serde_json::{Map, Value};
 
 use crate::rules::{ANY_STAGE, CHECKERS, Profile, Rules, TOOLS};
+use crate::version::Version;
 
 /// How serious a [`Problem`] is.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -39,6 +40,8 @@ pub enum ProblemKind {
     /// A type's `tool` that isn't one of [`CHECKERS`], or a key of `requires` that isn't one of
     /// [`TOOLS`].
     UnknownTool,
+    /// A `requires` value that isn't a version.
+    InvalidVersion,
     /// A stage listed more than once in `stages`.
     DuplicateStage,
     /// An extension that is empty or contains a dot.
@@ -182,17 +185,18 @@ impl Checker<'_> {
     }
 
     fn requires(&mut self) {
-        for tool in self.rules.requires().keys() {
+        for (tool, version) in self.rules.requires() {
+            let at = format!("requires \"{tool}\"");
             if !TOOLS.contains(&tool.as_str()) {
                 let message = format!(
                     "\"{tool}\" is not a known tool ({})",
                     list(TOOLS.iter().copied())
                 );
-                self.push(
-                    ProblemKind::UnknownTool,
-                    &format!("requires \"{tool}\""),
-                    message,
-                );
+                self.push(ProblemKind::UnknownTool, &at, message);
+            }
+            if Version::parse(version).is_none() {
+                let message = format!("\"{version}\" isn't a version like 0.9.0");
+                self.push(ProblemKind::InvalidVersion, &at, message);
             }
         }
     }

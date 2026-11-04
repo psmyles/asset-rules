@@ -46,6 +46,7 @@ fn sketch_results() -> Results {
             branch: Some("main".to_owned()),
             mode: Mode::Advise,
         },
+        findings: vec![],
         files: vec![FileResult {
             path: "Assets/Art/Props/T_Crate_D.png".to_owned(),
             kind: Some("texture".to_owned()),
@@ -60,7 +61,7 @@ fn sketch_results() -> Results {
     }
 }
 
-/// The §3 sketch, verbatim.
+/// The §3 sketch, verbatim, plus the run's `findings` (empty here), which the sketch didn't have.
 fn sketch_json() -> Value {
     json!({
       "schema": "asset-check.results",
@@ -68,6 +69,7 @@ fn sketch_json() -> Value {
       "tool": { "name": "fire-cli", "version": "0.1.0" },
       "rules": { "commit": "1a2b3c4", "digest": "sha256:…" },
       "context": { "branch": "main", "mode": "advise" },
+      "findings": [],
       "files": [
         {
           "path": "Assets/Art/Props/T_Crate_D.png",
@@ -166,6 +168,7 @@ fn keys_are_written_in_the_sketchs_order() {
             "context",
             "branch",
             "mode",
+            "findings",
             "files",
             "path",
             "type",

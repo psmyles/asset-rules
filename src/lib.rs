@@ -24,6 +24,7 @@ mod pattern;
 mod resolve;
 pub mod results;
 mod rules;
+mod version;
 
 pub use check::{Level, Problem, ProblemKind};
 pub use pattern::Pattern;

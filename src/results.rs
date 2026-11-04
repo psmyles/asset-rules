@@ -3,6 +3,9 @@
 //! One shape for both checkers, so the Launcher window, the Unity tool and CI read one format.
 //! Every field is always written, as `null` when it has no value. Within a version fields are
 //! only ever added; a change to what one means is a new version.
+//!
+//! It follows the sketch in `asset-check-plan.md` §3, plus a top-level `findings` for what
+//! concerns the run rather than one file, such as a tool older than the rules require.
 
 use std::error::Error;
 use std::fmt;
@@ -15,6 +18,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::{Map, Value, json};
 
 use crate::file::write_replacing;
+use crate::version::Version;
 use crate::{Context, Mode, Pattern, Resolved, Rules, StageFrom};
 
 /// The `schema` every results file names.
@@ -26,6 +30,9 @@ pub const VERSION: u64 = 1;
 /// The rule id of the finding for a file no profile matches (AC6).
 pub const NO_PROFILE_RULE: &str = "file.no_profile";
 
+/// The rule id of the finding for a tool older than `rules.json` requires.
+pub const TOO_OLD_RULE: &str = "tool.too_old";
+
 /// One CLI run's results.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Results {
@@ -34,6 +41,9 @@ pub struct Results {
     /// The rules they were checked against.
     pub rules: RulesInfo,
     pub context: ContextInfo,
+    /// Findings about the run rather than any one file, e.g. [`TOO_OLD_RULE`].
+    #[serde(default)]
+    pub findings: Vec<Finding>,
     /// The files this CLI looked at. Files of other tools' types, and ignored files, aren't listed.
     pub files: Vec<FileResult>,
 }
@@ -261,6 +271,41 @@ fn no_profile(name: &str, kind: &str, rules: &Rules) -> Finding {
     finding
 }
 
+/// The finding for `tool` when it is older than `required`, at `severity`. `None` when it isn't,
+/// or when either isn't a version.
+pub(crate) fn too_old(tool: &ToolInfo, required: &str, severity: Severity) -> Option<Finding> {
+    let have = Version::parse(&tool.version)?;
+    if have >= Version::parse(required)? {
+        return None;
+    }
+    let product = product(&tool.name);
+    let mut finding = Finding::new(
+        TOO_OLD_RULE,
+        severity,
+        format!("{product} is too old"),
+        format!(
+            "This is {} {}, but the rules need {required} or later.",
+            tool.name, tool.version
+        ),
+        "An older version may not know every rule the technical artist has set, so files can be \
+         checked against the wrong rules, or not at all.",
+        format!("Update {product} to version {required} or later, then check again."),
+    );
+    finding.measured = object(json!({ "version": tool.version }));
+    finding.limit = object(json!({ "min_version": required }));
+    Some(finding)
+}
+
+/// What the artist installs to get `tool`: each CLI ships with its app (AC12, AC13).
+fn product(tool: &str) -> &str {
+    match tool {
+        "fire-cli" => "Fire",
+        "3d-review-cli" => "3D Review",
+        "launcher" => "Launcher",
+        other => other,
+    }
+}
+
 fn join(patterns: &[Pattern], separator: &str) -> String {
     let texts: Vec<&str> = patterns.iter().map(Pattern::as_str).collect();
     texts.join(separator)
@@ -301,6 +346,7 @@ impl Results {
                 branch: ctx.branch.clone(),
                 mode: rules.mode(),
             },
+            findings: Vec::new(),
             files: Vec::new(),
         }
     }
@@ -352,17 +398,20 @@ impl Results {
         serde_json::from_slice(&bytes).map_err(json)
     }
 
-    /// The process exit code for these results: 0 when no finding is at warning level or worse
-    /// and no file was unreadable, else 1. (2, a command line that couldn't be followed, is each
-    /// CLI's own.)
+    /// The process exit code for these results: 0 when no finding (the run's or a file's) is at
+    /// warning level or worse and no file was unreadable, else 1. (2, a command line that
+    /// couldn't be followed, is each CLI's own.)
     pub fn exit_code(&self) -> u8 {
-        let failed = self.files.iter().any(|file| {
-            file.status == Status::Unreadable
-                || file
-                    .findings
-                    .iter()
-                    .any(|finding| finding.severity >= Severity::Warning)
-        });
+        let serious = |findings: &[Finding]| {
+            findings
+                .iter()
+                .any(|finding| finding.severity >= Severity::Warning)
+        };
+        let failed = serious(&self.findings)
+            || self
+                .files
+                .iter()
+                .any(|file| file.status == Status::Unreadable || serious(&file.findings));
         u8::from(failed)
     }
 }

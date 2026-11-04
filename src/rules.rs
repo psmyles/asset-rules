@@ -13,6 +13,7 @@ use serde_json::Value;
 use crate::Pattern;
 use crate::check::{UnknownField, scan_unknown_fields};
 use crate::digest::sha256;
+use crate::results::{Finding, Severity, ToolInfo, too_old};
 
 /// The `rules.json` version this crate reads.
 pub const RULES_VERSION: u64 = 1;
@@ -134,6 +135,7 @@ impl Rules {
                     return Err(RulesError::Version {
                         path: path.to_owned(),
                         found: found.map(Value::to_string),
+                        requires: lenient_requires(&value),
                     });
                 }
             }
@@ -209,6 +211,27 @@ impl Rules {
     pub(crate) fn unknown_fields(&self) -> &[UnknownField] {
         &self.unknown_fields
     }
+
+    /// The finding for `tool` when it is older than `requires` asks: a warning, or an error in
+    /// enforce mode. `None` when it is new enough, isn't listed, or either version isn't one
+    /// (`rules check` reports a `requires` value that isn't).
+    pub fn too_old(&self, tool: &ToolInfo) -> Option<Finding> {
+        let severity = match self.mode() {
+            Mode::Advise => Severity::Warning,
+            Mode::Enforce => Severity::Error,
+        };
+        too_old(tool, self.requires().get(&tool.name)?, severity)
+    }
+}
+
+/// `requires` read from any JSON object, whatever its version: tool names with string values.
+fn lenient_requires(root: &Value) -> BTreeMap<String, String> {
+    root.get("requires")
+        .and_then(Value::as_object)
+        .into_iter()
+        .flatten()
+        .filter_map(|(tool, version)| Some((tool.clone(), version.as_str()?.to_owned())))
+        .collect()
 }
 
 /// Why a `rules.json` couldn't be loaded.
@@ -223,11 +246,27 @@ pub enum RulesError {
         source: serde_json::Error,
     },
     /// The file's `version` is missing (`found` is `None`) or isn't [`RULES_VERSION`] (`found` is
-    /// the value as written).
+    /// the value as written). `requires` is read from it anyway, so a tool too old for a newer
+    /// `rules.json` can still say what to update ([`RulesError::too_old`]).
     Version {
         path: PathBuf,
         found: Option<String>,
+        requires: BTreeMap<String, String>,
     },
+}
+
+impl RulesError {
+    /// For a `rules.json` this tool can't read because of its version: the finding saying what
+    /// to update, if `requires` asks for a newer `tool`. An error, since nothing could be checked.
+    /// `None` for any other error.
+    pub fn too_old(&self, tool: &ToolInfo) -> Option<Finding> {
+        match self {
+            RulesError::Version { requires, .. } => {
+                too_old(tool, requires.get(&tool.name)?, Severity::Error)
+            }
+            RulesError::Read { .. } | RulesError::Json { .. } => None,
+        }
+    }
 }
 
 impl fmt::Display for RulesError {
@@ -239,7 +278,9 @@ impl fmt::Display for RulesError {
             RulesError::Json { path, source } => {
                 write!(f, "{} isn't valid: {source}", path.display())
             }
-            RulesError::Version { path, found: None } => write!(
+            RulesError::Version {
+                path, found: None, ..
+            } => write!(
                 f,
                 "{} has no \"version\"; this tool reads version {RULES_VERSION}",
                 path.display()
@@ -247,6 +288,7 @@ impl fmt::Display for RulesError {
             RulesError::Version {
                 path,
                 found: Some(found),
+                ..
             } => write!(
                 f,
                 "{} is version {found}, but this tool reads version {RULES_VERSION}; \
