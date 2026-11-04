@@ -1,0 +1,28 @@
+[package]
+name = "asset-rules"
+version = "0.1.0"
+description = "Which Asset Check rules apply to a file, and the results format the checkers write."
+edition = "2024"
+# The floor 3D Review builds at; development uses the latest stable (`rust-toolchain.toml`).
+rust-version = "1.88"
+license = "MIT"
+repository = "https://github.com/psmyles/asset-rules"
+publish = false
+
+[dependencies]
+# Glob matching for profile `names` / `paths` and `branches[]` patterns. Default features
+# only add a `log` dependency, which nothing here uses.
+globset = { version = "0.4", default-features = false }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# The rules-file digest and the cache key. Default features only add `alloc` and the
+# OID tables (`const-oid`); hashing needs neither.
+sha2 = { version = "0.11", default-features = false }
+
+# 3D Review's gate: clippy fails on a lint whether or not `-D warnings` was passed. Only
+# clippy evaluates these, so a plain `cargo build` is unaffected. `priority = -1` lets an
+# individual lint below override the group.
+[lints.clippy]
+all = { level = "deny", priority = -1 }
+# Every `unsafe` carries a `// SAFETY:` rationale directly above it. None is expected.
+undocumented_unsafe_blocks = "deny"

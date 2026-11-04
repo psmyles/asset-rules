@@ -1,0 +1,5 @@
+# The latest stable, as in 3D Review. The floor lives in `Cargo.toml`'s `rust-version`
+# (1.88), which cargo already enforces; pinning a version here as well would mean two
+# places to bump.
+[toolchain]
+channel = "stable"
