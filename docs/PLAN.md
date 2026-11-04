@@ -1,7 +1,9 @@
 # asset-rules - Work Plan
 
-**Status, November 2026:** the repository exists; nothing is built yet. This is step 1 of the Asset
-Check rollout and comes before the CLI work in 3D Review and Fire.
+**Status, November 2026:** items 1-10 are done and `v0.1.0` is tagged, so the CLI work in
+3D Review and Fire can start. This is step 1 of the Asset Check rollout. Where the build departed
+from this plan (a top-level `findings` in results, a wider cache key, how staged content is read),
+the commit for that item says why.
 
 ## What this crate is
 
