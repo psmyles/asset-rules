@@ -4,6 +4,8 @@ use std::borrow::Cow;
 use std::fs;
 use std::path::{Component, Path, PathBuf};
 
+use serde::{Deserialize, Serialize};
+
 use crate::{Profile, Rules};
 
 /// What resolution needs to know besides the file's path.
@@ -17,8 +19,19 @@ pub struct Context {
     pub branch: Option<String>,
 }
 
-/// Where a file's stage came from (AC7), in order of precedence.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+impl Context {
+    /// `path` relative to the repository's top folder with `/` separators, as results and
+    /// `paths` patterns use it, or `None` if it lies outside. Paths are taken as [`resolve`]
+    /// takes them.
+    pub fn repo_path(&self, path: &Path) -> Option<String> {
+        repo_relative(&self.repo_root, path)
+    }
+}
+
+/// Where a file's stage came from (AC7), in order of precedence. Written to results in
+/// lowercase: `branch`, `profile`, `project`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum StageFrom {
     /// The asset itself. Reserved: the marking mechanism isn't decided, so v1 never returns it.
     Asset,

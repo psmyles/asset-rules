@@ -11,11 +11,14 @@
 //! - [`Rules::load`] reads `rules.json`; [`Rules::check`] lists the problems in it, for each CLI's
 //!   `rules check` command.
 //! - [`resolve`] says which type, profile, stage and rules file apply to a file.
+//! - [`results`] is the format both CLIs write with `--results`.
 
 mod check;
 mod digest;
+mod file;
 mod pattern;
 mod resolve;
+pub mod results;
 mod rules;
 
 pub use check::{Level, Problem, ProblemKind};

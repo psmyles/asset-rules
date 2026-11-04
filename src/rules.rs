@@ -7,7 +7,7 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::Pattern;
@@ -28,7 +28,7 @@ pub const CHECKERS: &[&str] = &["fire-cli", "3d-review-cli"];
 pub const TOOLS: &[&str] = &["fire-cli", "3d-review-cli", "launcher"];
 
 /// Whether findings only advise the artist or can block a commit (AC2).
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Mode {
     /// Report only: the artist can always commit.
