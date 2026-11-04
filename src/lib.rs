@@ -7,3 +7,18 @@
 //! It does not contain the rules (they live in the rules repo, a separate git submodule) and
 //! does not know what a rule means: it hands each CLI the path of the rules file that applies,
 //! and the CLI parses that file and runs the checks.
+//!
+//! - [`Rules::load`] reads `rules.json`; [`Rules::check`] lists the problems in it, for each CLI's
+//!   `rules check` command.
+
+mod check;
+mod digest;
+mod pattern;
+mod rules;
+
+pub use check::{Level, Problem, ProblemKind};
+pub use pattern::Pattern;
+pub use rules::{
+    ANY_STAGE, BranchStage, CHECKERS, FileType, Mode, Profile, RULES_VERSION, Rules, RulesError,
+    TOOLS,
+};
