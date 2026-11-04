@@ -6,7 +6,7 @@ use std::path::{Component, Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use crate::{Profile, Rules};
+use crate::{BranchStage, Profile, Rules};
 
 /// What resolution needs to know besides the file's path.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -219,16 +219,22 @@ pub(crate) fn stage_of<'a>(
     profile: &'a Profile,
 ) -> (&'a str, StageFrom) {
     // The asset's own stage comes first (AC7), but is reserved: v1 never has one.
-    if let Some(branch) = &ctx.branch
-        && let Some(rule) = rules
-            .branches()
-            .iter()
-            .find(|rule| rule.pattern.is_match(branch))
-    {
+    if let Some((_, rule)) = branch_rule(rules, ctx) {
         return (&rule.stage, StageFrom::Branch);
     }
     if let Some(stage) = &profile.stage {
         return (stage, StageFrom::Profile);
     }
     (rules.stage(), StageFrom::Project)
+}
+
+/// The first of `branches[]` matching the context's branch, with its index. `None` for a detached
+/// HEAD.
+pub(crate) fn branch_rule<'a>(rules: &'a Rules, ctx: &Context) -> Option<(usize, &'a BranchStage)> {
+    let branch = ctx.branch.as_deref()?;
+    rules
+        .branches()
+        .iter()
+        .enumerate()
+        .find(|(_, rule)| rule.pattern.is_match(branch))
 }

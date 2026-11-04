@@ -10,7 +10,8 @@
 //!
 //! - [`Rules::load`] reads `rules.json`; [`Rules::check`] lists the problems in it, for each CLI's
 //!   `rules check` command.
-//! - [`resolve`] says which type, profile, stage and rules file apply to a file.
+//! - [`resolve`] says which type, profile, stage and rules file apply to a file; [`explain`]
+//!   says why, for each CLI's `rules explain` command.
 //! - [`results`] is the format both CLIs write with `--results`.
 //! - [`git`] lists the staged files, the branch, and where to read each file's staged content.
 //! - [`cache`] keeps each file's results entry until something that decides it changes.
@@ -18,6 +19,7 @@
 pub mod cache;
 mod check;
 mod digest;
+mod explain;
 mod file;
 pub mod git;
 mod pattern;
@@ -27,6 +29,7 @@ mod rules;
 mod version;
 
 pub use check::{Level, Problem, ProblemKind};
+pub use explain::explain;
 pub use pattern::Pattern;
 pub use resolve::{Context, Resolution, Resolved, StageFrom, resolve};
 pub use rules::{
