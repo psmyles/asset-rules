@@ -2,6 +2,8 @@
 
 #![allow(dead_code)] // Each test crate uses only some of these.
 
+pub mod repo;
+
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};

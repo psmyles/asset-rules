@@ -11,8 +11,13 @@ use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::{Duration, SystemTime};
 
 use crate::Context;
+
+/// How old a temporary copy left by [`Repo::content`] must be before [`Repo::prune_copies`]
+/// removes it: a day, far longer than any check takes.
+pub const STALE_COPY_AGE: Duration = Duration::from_secs(24 * 60 * 60);
 
 /// A git repository (or worktree, or submodule) found from a folder inside it.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -240,18 +245,48 @@ impl Repo {
             .join(oid)
     }
 
+    /// Removes the temporary copies [`Repo::content`] made that are older than
+    /// [`STALE_COPY_AGE`]: those a killed run never removed. Returns how many.
+    pub fn prune_copies(&self) -> io::Result<usize> {
+        self.prune_copies_older_than(STALE_COPY_AGE)
+    }
+
+    /// Removes the temporary copies older than `age`, returning how many.
+    pub fn prune_copies_older_than(&self, age: Duration) -> io::Result<usize> {
+        let Some(cutoff) = SystemTime::now().checked_sub(age) else {
+            return Ok(0);
+        };
+        let copies = match fs::read_dir(self.copies_dir()) {
+            Ok(copies) => copies,
+            Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(0),
+            Err(error) => return Err(error),
+        };
+        let mut removed = 0;
+        for copy in copies.flatten() {
+            let stale = copy
+                .metadata()
+                .and_then(|metadata| metadata.modified())
+                .is_ok_and(|modified| modified < cutoff);
+            if stale && fs::remove_dir_all(copy.path()).is_ok() {
+                removed += 1;
+            }
+        }
+        Ok(removed)
+    }
+
+    /// `<common dir>/asset-check/tmp/`.
+    fn copies_dir(&self) -> PathBuf {
+        self.common_dir.join("asset-check").join("tmp")
+    }
+
     /// A new, empty folder under `<common dir>/asset-check/tmp/`, unique to this process and call.
     fn temp_dir(&self) -> io::Result<PathBuf> {
         static NEXT: AtomicU64 = AtomicU64::new(0);
-        let dir = self
-            .common_dir
-            .join("asset-check")
-            .join("tmp")
-            .join(format!(
-                "{}-{}",
-                std::process::id(),
-                NEXT.fetch_add(1, Ordering::Relaxed)
-            ));
+        let dir = self.copies_dir().join(format!(
+            "{}-{}",
+            std::process::id(),
+            NEXT.fetch_add(1, Ordering::Relaxed)
+        ));
         // One left by a killed process with the same id.
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir)?;

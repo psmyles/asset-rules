@@ -13,7 +13,9 @@
 //! - [`resolve`] says which type, profile, stage and rules file apply to a file.
 //! - [`results`] is the format both CLIs write with `--results`.
 //! - [`git`] lists the staged files, the branch, and where to read each file's staged content.
+//! - [`cache`] keeps each file's results entry until something that decides it changes.
 
+pub mod cache;
 mod check;
 mod digest;
 mod file;

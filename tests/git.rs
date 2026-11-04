@@ -8,83 +8,10 @@ mod common;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 use asset_rules::git::{Repo, StagedFile};
-use common::{TempDir, temp_dir};
-
-/// A repository on branch `main` in a temporary folder, with git's user and global settings kept
-/// out of the commands the tests make.
-struct TestRepo {
-    dir: TempDir,
-}
-
-impl TestRepo {
-    fn new() -> TestRepo {
-        let dir = temp_dir();
-        git_in(dir.path(), &["init", "-q", "-b", "main"]);
-        TestRepo { dir }
-    }
-
-    fn path(&self) -> &Path {
-        self.dir.path()
-    }
-
-    fn git(&self, args: &[&str]) -> String {
-        git_in(self.path(), args)
-    }
-
-    fn write(&self, relative: &str, contents: &str) -> PathBuf {
-        self.dir.write(relative, contents)
-    }
-
-    fn commit(&self) {
-        self.git(&["commit", "-q", "--no-verify", "-m", "test"]);
-    }
-
-    fn repo(&self) -> Repo {
-        Repo::discover(self.path()).expect("discover the repository")
-    }
-
-    fn staged(&self) -> Vec<StagedFile> {
-        self.repo().staged().expect("list staged files")
-    }
-
-    /// The id git gives `relative`'s working content.
-    fn hash(&self, relative: &str) -> String {
-        self.git(&["hash-object", relative]).trim().to_owned()
-    }
-}
-
-/// Runs git in `dir` and returns its output, failing the test if it fails.
-fn git_in(dir: &Path, args: &[&str]) -> String {
-    let output = Command::new("git")
-        .arg("-C")
-        .arg(dir)
-        .args([
-            "-c",
-            "user.name=Test",
-            "-c",
-            "user.email=test@example.com",
-            "-c",
-            "commit.gpgsign=false",
-            "-c",
-            "core.autocrlf=false",
-            "-c",
-            "protocol.file.allow=always",
-        ])
-        .args(args)
-        .env("GIT_CONFIG_NOSYSTEM", "1")
-        .env("GIT_CONFIG_GLOBAL", dir.join("no-global-config"))
-        .output()
-        .expect("run git");
-    assert!(
-        output.status.success(),
-        "git {args:?}: {}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-    String::from_utf8(output.stdout).unwrap()
-}
+use common::repo::TestRepo;
+use common::temp_dir;
 
 fn canonical(path: &Path) -> PathBuf {
     fs::canonicalize(path).unwrap()
@@ -377,4 +304,39 @@ fn text_that_only_looks_like_a_pointer_is_copied_as_it_is() {
     let staged = repo.staged().unwrap();
     let content = repo.content(&staged[0]).unwrap();
     assert_eq!(fs::read_to_string(content.path()).unwrap(), not_a_pointer);
+}
+
+#[test]
+fn copies_left_by_a_killed_run_are_pruned_once_stale() {
+    let test = TestRepo::new();
+    test.write("Assets/SM_Rock.fbx", "staged rock");
+    test.git(&["add", "."]);
+    test.write("Assets/SM_Rock.fbx", "edited after staging");
+    let repo = test.repo();
+    let staged = repo.staged().unwrap();
+
+    // A run killed while checking never drops its copy.
+    let copy = repo.content(&staged[0]).unwrap();
+    let folder = copy.path().parent().unwrap().to_owned();
+    std::mem::forget(copy);
+
+    // Not yet a day old.
+    assert_eq!(repo.prune_copies().unwrap(), 0);
+    assert!(folder.exists());
+
+    std::thread::sleep(std::time::Duration::from_millis(300));
+    let in_use = repo.content(&staged[0]).unwrap();
+    // Older than 200 ms: the forgotten copy, but not the one just made.
+    let removed = repo
+        .prune_copies_older_than(std::time::Duration::from_millis(200))
+        .unwrap();
+    assert_eq!(removed, 1);
+    assert!(!folder.exists());
+    assert!(in_use.path().exists());
+}
+
+#[test]
+fn pruning_copies_before_any_were_made() {
+    let test = TestRepo::new();
+    assert_eq!(test.repo().prune_copies().unwrap(), 0);
 }

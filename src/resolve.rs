@@ -43,6 +43,18 @@ pub enum StageFrom {
     Project,
 }
 
+impl StageFrom {
+    /// As results write it: `asset`, `branch`, `profile` or `project`.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            StageFrom::Asset => "asset",
+            StageFrom::Branch => "branch",
+            StageFrom::Profile => "profile",
+            StageFrom::Project => "project",
+        }
+    }
+}
+
 /// The answer to "which rules apply to this file?".
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Resolution {
