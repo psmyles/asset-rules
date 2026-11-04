@@ -10,14 +10,17 @@
 //!
 //! - [`Rules::load`] reads `rules.json`; [`Rules::check`] lists the problems in it, for each CLI's
 //!   `rules check` command.
+//! - [`resolve`] says which type, profile, stage and rules file apply to a file.
 
 mod check;
 mod digest;
 mod pattern;
+mod resolve;
 mod rules;
 
 pub use check::{Level, Problem, ProblemKind};
 pub use pattern::Pattern;
+pub use resolve::{Context, Resolution, Resolved, StageFrom, resolve};
 pub use rules::{
     ANY_STAGE, BranchStage, CHECKERS, FileType, Mode, Profile, RULES_VERSION, Rules, RulesError,
     TOOLS,
