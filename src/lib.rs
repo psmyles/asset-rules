@@ -12,10 +12,12 @@
 //!   `rules check` command.
 //! - [`resolve`] says which type, profile, stage and rules file apply to a file.
 //! - [`results`] is the format both CLIs write with `--results`.
+//! - [`git`] lists the staged files, the branch, and where to read each file's staged content.
 
 mod check;
 mod digest;
 mod file;
+pub mod git;
 mod pattern;
 mod resolve;
 pub mod results;
