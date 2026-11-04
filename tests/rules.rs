@@ -77,8 +77,14 @@ fn the_sketch_loads_and_has_no_problems() {
 fn a_profile_falls_back_to_its_catch_all_file() {
     let (_dir, rules) = setup(&sketch());
     let character = &rules.profiles()[0];
-    assert_eq!(character.rules_file("prototype"), Some("models/character-proto.json"));
-    assert_eq!(character.rules_file("production"), Some("models/character.json"));
+    assert_eq!(
+        character.rules_file("prototype"),
+        Some("models/character-proto.json")
+    );
+    assert_eq!(
+        character.rules_file("production"),
+        Some("models/character.json")
+    );
     let prop = &rules.profiles()[1];
     assert_eq!(prop.rules_file("review"), None);
 }
@@ -123,7 +129,10 @@ fn a_missing_field_is_a_json_error_that_names_it() {
     rules.as_object_mut().unwrap().remove("stage");
     let error = load_text(&rules.to_string()).unwrap_err();
     assert!(matches!(error, RulesError::Json { .. }), "{error}");
-    assert!(error.to_string().contains("missing field `stage`"), "{error}");
+    assert!(
+        error.to_string().contains("missing field `stage`"),
+        "{error}"
+    );
 }
 
 #[test]
@@ -146,7 +155,10 @@ fn another_version_is_refused_before_its_shape_is_read() {
     let mut rules = sketch();
     rules.as_object_mut().unwrap().remove("version");
     let error = load_text(&rules.to_string()).unwrap_err();
-    assert!(matches!(error, RulesError::Version { found: None, .. }), "{error}");
+    assert!(
+        matches!(error, RulesError::Version { found: None, .. }),
+        "{error}"
+    );
 }
 
 #[test]
@@ -233,7 +245,11 @@ fn a_stage_with_no_rules_file_and_no_catch_all() {
             (ProblemKind::MissingStageFile, "profiles[2] \"normal-map\""),
         ]
     );
-    assert!(problems[0].message.contains("stages \"prototype\", \"production\""));
+    assert!(
+        problems[0]
+            .message
+            .contains("stages \"prototype\", \"production\"")
+    );
     assert!(problems[1].message.contains("stage \"prototype\","));
 }
 
@@ -264,7 +280,11 @@ fn an_invalid_glob_in_names_paths_or_branches() {
             (ProblemKind::InvalidGlob, "profiles[2] \"normal-map\""),
         ]
     );
-    assert!(problems[0].message.contains("\"proto/[\""), "{}", problems[0]);
+    assert!(
+        problems[0].message.contains("\"proto/[\""),
+        "{}",
+        problems[0]
+    );
 }
 
 #[test]
@@ -283,7 +303,10 @@ fn duplicate_profile_ids() {
 fn duplicate_stages() {
     let mut rules = sketch();
     rules["stages"] = json!(["prototype", "production", "prototype"]);
-    assert_eq!(found(&check(&rules)), [(ProblemKind::DuplicateStage, "stages")]);
+    assert_eq!(
+        found(&check(&rules)),
+        [(ProblemKind::DuplicateStage, "stages")]
+    );
 }
 
 // --- rules check: profiles that can never match ----------------------------------------------
@@ -447,7 +470,11 @@ fn an_extension_in_two_types() {
         found(&problems),
         [(ProblemKind::DuplicateExtension, "types \"texture\"")]
     );
-    assert!(problems[0].message.contains("\"fbx\" is also in type \"model\""));
+    assert!(
+        problems[0]
+            .message
+            .contains("\"fbx\" is also in type \"model\"")
+    );
 }
 
 #[test]
@@ -493,5 +520,9 @@ fn a_backslash_in_a_path_pattern() {
         found(&problems),
         [(ProblemKind::Backslash, "profiles[1] \"prop-model\"")]
     );
-    assert!(problems[0].message.contains("write \"Assets/Art/Environment/**\""));
+    assert!(
+        problems[0]
+            .message
+            .contains("write \"Assets/Art/Environment/**\"")
+    );
 }

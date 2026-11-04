@@ -224,7 +224,10 @@ pub enum RulesError {
     },
     /// The file's `version` is missing (`found` is `None`) or isn't [`RULES_VERSION`] (`found` is
     /// the value as written).
-    Version { path: PathBuf, found: Option<String> },
+    Version {
+        path: PathBuf,
+        found: Option<String>,
+    },
 }
 
 impl fmt::Display for RulesError {

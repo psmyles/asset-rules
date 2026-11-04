@@ -92,5 +92,8 @@ pub fn write_rules(dir: &TempDir, rules: &Value) -> PathBuf {
             dir.write(file, "{}");
         }
     }
-    dir.write("rules.json", &serde_json::to_string_pretty(rules).expect("serialize"))
+    dir.write(
+        "rules.json",
+        &serde_json::to_string_pretty(rules).expect("serialize"),
+    )
 }

@@ -135,7 +135,9 @@ impl Checker<'_> {
             self.push(
                 ProblemKind::UnknownStage,
                 at,
-                format!("{lead}\"{stage}\", which is not one of the stages in \"stages\" ({known})"),
+                format!(
+                    "{lead}\"{stage}\", which is not one of the stages in \"stages\" ({known})"
+                ),
             );
         }
     }
@@ -186,7 +188,11 @@ impl Checker<'_> {
                     "\"{tool}\" is not a known tool ({})",
                     list(TOOLS.iter().copied())
                 );
-                self.push(ProblemKind::UnknownTool, &format!("requires \"{tool}\""), message);
+                self.push(
+                    ProblemKind::UnknownTool,
+                    &format!("requires \"{tool}\""),
+                    message,
+                );
             }
         }
     }
@@ -371,9 +377,7 @@ fn covers(p: &Profile, q: &Profile) -> bool {
     let paths = match (&p.paths, &q.paths) {
         (None, _) => true,
         (Some(ps), None) => ps.iter().any(|pp| pp.as_str() == "**"),
-        (Some(ps), Some(qs)) => qs
-            .iter()
-            .all(|qp| ps.iter().any(|pp| pp.covers_path(qp))),
+        (Some(ps), Some(qs)) => qs.iter().all(|qp| ps.iter().any(|pp| pp.covers_path(qp))),
     };
     names && paths
 }
@@ -431,7 +435,12 @@ pub(crate) fn scan_unknown_fields(root: &Value) -> Vec<UnknownField> {
     if let Some(types) = root.get("types").and_then(Value::as_object) {
         for (name, file_type) in types {
             if let Some(file_type) = file_type.as_object() {
-                scan(file_type, &format!("types \"{name}\""), TYPE_FIELDS, &mut out);
+                scan(
+                    file_type,
+                    &format!("types \"{name}\""),
+                    TYPE_FIELDS,
+                    &mut out,
+                );
             }
         }
     }

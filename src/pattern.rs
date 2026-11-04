@@ -56,7 +56,9 @@ impl Pattern {
     /// Whether `candidate` (a file name without its extension, a repository-relative path with
     /// `/` separators, or a branch name) matches. Always `false` for an invalid pattern.
     pub fn is_match(&self, candidate: &str) -> bool {
-        self.glob.as_ref().is_ok_and(|glob| glob.is_match(candidate))
+        self.glob
+            .as_ref()
+            .is_ok_and(|glob| glob.is_match(candidate))
     }
 
     /// Why the pattern isn't a valid glob, or `None` if it is.

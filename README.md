@@ -37,6 +37,7 @@ asset-rules = { path = "../asset-rules" }
 Pure Rust plus the `git` command. Builds on the latest stable Rust (1.88 at least). The gate:
 
 ```sh
+cargo fmt --check
 cargo clippy --all-targets -- -D warnings
 cargo test
 ```
