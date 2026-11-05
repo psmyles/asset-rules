@@ -147,8 +147,14 @@ Do these in order. Each item says when it's done.
     settings for the checkers and a strict check of a rules file for `rules check` and Rule Editor.
     **Done.** Both CLIs' draft catalogs (copied into `tests/fixtures/catalogs/`) have no problems,
     and every rules file in exp-content-rules checks clean against them.
-14. **Tag `v0.2.0`** once both CLIs are ported to their catalogs and build against this branch,
-    with anything the ports need (perhaps code generation for their `build.rs`) added first.
+14. **What the ports need.**
+    - `Rule::settings` reads an entry as both CLIs do: a listed rule is on unless it says
+      `"enabled": false`, and an entry with a field of the wrong type takes the defaults whole.
+    - `Rules::check_rules_files`: a CLI's rules files read against its catalog, for `rules check`.
+    - `codegen`: what a CLI's `build.rs` generates from its catalog (`RuleId`, typed parameters,
+      `Found` with each rule's measures and cases). The code for both draft catalogs is kept in
+      `tests/fixtures/codegen/`, so the tests compile it.
+15. **Tag `v0.2.0`** once both CLIs are ported to their catalogs and build against this branch.
 
 ## API sketch
 

@@ -22,7 +22,10 @@ CLIs write.
 - `rules.json`, versions 1 and 2 (`check` and `skip`): loading, `rules check`, resolution and
   `rules explain`.
 - The results format both CLIs write, the cache, and git (the staged files and their content).
-- Rule catalogs (`catalog`): the format each CLI describes its rules in.
+- Rule catalogs (`catalog`): the format each CLI describes its rules in, and the strict check of
+  a CLI's rules files against its catalog for `rules check`.
+- The code each CLI's `build.rs` generates from its catalog (`codegen`): rule ids, typed
+  parameters, and what each check hands its texts.
 - The one JSON style (`json`) every tool writes `rules.json` and rules files in.
 
 ## Using it
