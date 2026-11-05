@@ -1,8 +1,8 @@
 # asset-rules - Work Plan
 
-**Status, 5 November 2026:** `v0.1.0` (items 1-10) is tagged and used by both CLIs. **0.2**
-(items 11-14) is on the `v0.2` branch, for the rule catalogs and Rule Editor: the design is the rules
-repo's `docs/rule-editor-plan.md`. Items 11-13 are done; 14 waits for the CLIs' ports.
+**Status, 5 November 2026:** `v0.2.0` (items 11-15) is tagged and used by both CLIs: the rule
+catalogs, for Rule Editor (the design is the rules repo's `docs/rule-editor-plan.md`). `v0.1.0` was
+items 1-10.
 
 0.1 was step 1 of the Asset Check rollout. Where the build departed
 from this plan (a top-level `findings` in results, a wider cache key, how staged content is read),
@@ -158,7 +158,7 @@ Do these in order. Each item says when it's done.
     **Done:** fire-cli and 3d-review-cli are both ported (their `catalog` branches) and build
     against this branch.
 15. **Tag `v0.2.0`:** set `version = "0.2.0"` in `Cargo.toml`, push, tag; then both CLIs depend on
-    the tag and commit their `Cargo.lock`.
+    the tag and commit their `Cargo.lock`. **Done** (5 November 2026).
 
 ## API sketch
 
