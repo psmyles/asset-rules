@@ -223,6 +223,17 @@ pub struct ParamOption {
     pub aliases: Vec<Value>,
 }
 
+/// A rule's entry in a rules file, as [`Rule::settings`] reads it: every field may be left out,
+/// and fields it doesn't know are passed over.
+#[derive(Deserialize)]
+struct EntryIn {
+    enabled: Option<bool>,
+    severity: Option<Severity>,
+    #[serde(default)]
+    params: Map<String, Value>,
+    note: Option<String>,
+}
+
 /// A rule's settings for one rules file: its defaults, with what the file sets over them.
 #[derive(Clone, Debug, PartialEq)]
 pub struct RuleSettings {
@@ -723,36 +734,33 @@ impl Rule {
 
     /// The rule's settings for a rules file: the defaults in `base`'s set, with what `entry` (the
     /// rule's object in the file, if listed) sets over them. Lenient, as the checkers load rules
-    /// files: a value of the wrong kind keeps the default, and an alias reads as its option's
-    /// value. [`Catalog::check_rules_file`] reports what was passed over.
+    /// files, which are written by hand:
+    /// - a listed rule is on unless it says `"enabled": false`: listing it is asking for it;
+    /// - an entry that can't be read (not an object, or an `enabled`, `severity`, `params` or
+    ///   `note` of the wrong type) takes the defaults whole;
+    /// - a parameter value the rule can't take (the wrong kind, out of range, not an option)
+    ///   keeps the default, and an alias reads as its option's value.
+    ///
+    /// [`Catalog::check_rules_file`] reports everything passed over.
     pub fn settings(&self, base: Option<&str>, entry: Option<&Value>) -> RuleSettings {
         let mut settings = self.defaults(base);
-        let Some(entry) = entry.and_then(Value::as_object) else {
+        let Some(entry) =
+            entry.and_then(|entry| serde_json::from_value::<EntryIn>(entry.clone()).ok())
+        else {
             return settings;
         };
-        if let Some(enabled) = entry.get("enabled").and_then(Value::as_bool) {
-            settings.enabled = enabled;
-        }
-        if let Some(severity) = entry
-            .get("severity")
-            .and_then(|v| serde_json::from_value::<Severity>(v.clone()).ok())
-        {
+        settings.enabled = entry.enabled.unwrap_or(true);
+        if let Some(severity) = entry.severity {
             settings.severity = severity;
         }
-        if let Some(params) = entry.get("params").and_then(Value::as_object) {
-            for (key, value) in params {
-                if let Some(param) = self.param(key)
-                    && param.check_value(value, false).is_ok()
-                {
-                    settings.params.insert(key.clone(), param.canonical(value));
-                }
+        for (key, value) in &entry.params {
+            if let Some(param) = self.param(key)
+                && param.check_value(value, false).is_ok()
+            {
+                settings.params.insert(key.clone(), param.canonical(value));
             }
         }
-        settings.note = entry
-            .get("note")
-            .and_then(Value::as_str)
-            .filter(|note| !note.trim().is_empty())
-            .map(str::to_owned);
+        settings.note = entry.note.filter(|note| !note.trim().is_empty());
         settings
     }
 

@@ -304,6 +304,46 @@ fn settings_are_read_leniently() {
 }
 
 #[test]
+fn a_listed_rule_is_on_unless_it_says_otherwise() {
+    let small = small();
+    let rule = small.rule("texture.max_size").unwrap();
+    assert!(!rule.defaults(None).enabled, "the fixture's default is off");
+    assert!(rule.settings(None, Some(&json!({}))).enabled);
+    assert!(
+        rule.settings(None, Some(&json!({ "severity": "warning" })))
+            .enabled
+    );
+    assert!(
+        !rule
+            .settings(None, Some(&json!({ "enabled": false })))
+            .enabled
+    );
+}
+
+#[test]
+fn an_entry_that_cant_be_read_takes_the_defaults_whole() {
+    let small = small();
+    let rule = small.rule("texture.max_size").unwrap();
+    for entry in [
+        json!("on"),
+        json!({ "severity": "catastrophic", "params": { "max": 2048 } }),
+        json!({ "enabled": "yes" }),
+        json!({ "params": [2048] }),
+        json!({ "note": 3 }),
+    ] {
+        assert_eq!(
+            rule.settings(None, Some(&entry)),
+            rule.defaults(None),
+            "{entry}"
+        );
+    }
+    // A value out of range keeps the default; the rest of the entry still applies.
+    let settings = rule.settings(None, Some(&json!({ "params": { "max": 0 } })));
+    assert!(settings.enabled);
+    assert_eq!(settings.params["max"], json!(4096));
+}
+
+#[test]
 fn a_rules_file_is_checked_strictly() {
     let small = small();
     let doc = json!({
