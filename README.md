@@ -24,13 +24,18 @@ The CLIs depend on a tagged release:
 asset-rules = { git = "https://github.com/psmyles/asset-rules", tag = "v0.1.0" }
 ```
 
-To build a CLI against unreleased changes, give the CLI's repository an untracked
-`.cargo/config.toml`:
+To build a CLI against unreleased changes, patch it from a `.cargo/config.toml` in the folder that
+holds both checkouts. Not the CLI repository's own: fire and 3D Review both commit theirs, for the
+static C runtime. Cargo merges the two, and one file serves both CLIs:
 
 ```toml
+# <folder holding asset-rules, fire and 3d-review-rs>/.cargo/config.toml
 [patch."https://github.com/psmyles/asset-rules"]
-asset-rules = { path = "../asset-rules" }
+asset-rules = { path = "asset-rules" }
 ```
+
+A path there is relative to the folder holding that `.cargo`. Remove the patch before committing a
+CLI's `Cargo.lock`, which would otherwise record the local checkout.
 
 ## Developing
 

@@ -165,12 +165,14 @@ pub struct Cache { /* get / put / prune */ }
 ## Working on the Mac
 
 - Pure Rust plus the `git` command, which comes with Xcode's command-line tools.
-- To develop a CLI against unreleased changes, the CLI's repository gets an untracked
-  `.cargo/config.toml`:
+- To develop a CLI against unreleased changes, patch it from a `.cargo/config.toml` in the folder
+  that holds the checkouts, not the CLI repository's own, which fire and 3D Review both commit. See
+  the README.
 
   ```toml
+  # <folder holding asset-rules, fire and 3d-review-rs>/.cargo/config.toml
   [patch."https://github.com/psmyles/asset-rules"]
-  asset-rules = { path = "../asset-rules" }
+  asset-rules = { path = "asset-rules" }
   ```
 
 ## References
