@@ -451,19 +451,25 @@ pub trait FromParam: Sized {
 
 impl FromParam for u32 {
     fn from_param(value: &Value) -> Option<u32> {
-        value.as_u64().and_then(|n| u32::try_from(n).ok())
+        i64::from_param(value).and_then(|n| u32::try_from(n).ok())
     }
 }
 
 impl FromParam for u64 {
     fn from_param(value: &Value) -> Option<u64> {
-        value.as_u64()
+        value
+            .as_u64()
+            .or_else(|| i64::from_param(value).and_then(|n| u64::try_from(n).ok()))
     }
 }
 
+/// Also a whole number written `6.0`.
 impl FromParam for i64 {
     fn from_param(value: &Value) -> Option<i64> {
-        value.as_i64()
+        value.as_i64().or_else(|| {
+            let n = value.as_f64()?;
+            (n.fract() == 0.0 && n.abs() < 9.0e15).then_some(n as i64)
+        })
     }
 }
 

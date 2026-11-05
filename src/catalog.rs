@@ -824,7 +824,7 @@ impl Param {
                 let Some(n) = value.as_f64() else {
                     return Err(format!("{value} isn't a number"));
                 };
-                if self.kind == ParamKind::Count && !(value.is_i64() || value.is_u64()) {
+                if self.kind == ParamKind::Count && whole(value).is_none() {
                     return Err(format!("{value} isn't a whole number"));
                 }
                 self.in_range(n)
@@ -894,9 +894,10 @@ impl Param {
     }
 
     /// `value` as the catalog writes it: an alias or another capitalisation becomes its option's
-    /// value. Anything else is returned as it is.
+    /// value, and a count written `6.0` becomes `6`. Anything else is returned as it is.
     pub fn canonical(&self, value: &Value) -> Value {
         match self.kind {
+            ParamKind::Count => whole(value).unwrap_or_else(|| value.clone()),
             ParamKind::Choice => self
                 .option_for(value, false)
                 .map_or_else(|_| value.clone(), |o| o.value.clone()),
@@ -1118,6 +1119,22 @@ fn plain(value: &Value) -> String {
         }
         other => other.to_string(),
     }
+}
+
+/// A whole number, as an integer: `6` and `6.0` are both `6`. `None` for anything else.
+fn whole(value: &Value) -> Option<Value> {
+    if value.is_i64() || value.is_u64() {
+        return Some(value.clone());
+    }
+    let n = value.as_f64()?;
+    let fits = n.fract() == 0.0 && n.abs() < 9.0e15;
+    fits.then(|| {
+        if n < 0.0 {
+            Value::from(n as i64)
+        } else {
+            Value::from(n as u64)
+        }
+    })
 }
 
 fn numbers_equal(a: &Value, b: &Value) -> bool {

@@ -567,3 +567,16 @@ fn rules_check_reads_a_checkers_own_rules_files_against_its_catalog() {
     fs::remove_file(dir.path().join("textures/normal.json")).expect("remove");
     assert!(found(&fire()).is_empty());
 }
+
+/// JSON doesn't tell `6` from `6.0`, and some writers (3D Review's own) write the second.
+#[test]
+fn a_whole_number_written_with_a_point_is_a_count() {
+    let small = small();
+    let rule = small.rule("texture.max_size").unwrap();
+    let max = rule.param("max").unwrap();
+    assert!(max.check_value(&json!(2048.0), true).is_ok());
+    assert!(max.check_value(&json!(2048.5), false).is_err());
+    let settings = rule.settings(None, Some(&json!({ "params": { "max": 2048.0 } })));
+    assert_eq!(settings.params["max"], json!(2048));
+    assert!(settings.params["max"].is_u64());
+}
