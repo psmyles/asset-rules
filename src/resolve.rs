@@ -110,7 +110,7 @@ pub struct Resolved {
 ///
 /// 1. **Type:** the one whose `extensions` include the file's, compared case-insensitively.
 /// 2. **Skipped?** Not if `check` is absent or one of its patterns matches the repository path,
-///    and no `skip` entry matches ([`skipped_by`]).
+///    and no `skip` entry matches ([`SkippedBy`] says which).
 /// 3. **Profile:** the first of that type, in file order, with a `names` pattern matching the
 ///    file name without its extension and, if it has `paths`, a pattern matching the
 ///    repository-relative path. Matching is case-sensitive.
