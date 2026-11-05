@@ -1,7 +1,10 @@
 # asset-rules - Work Plan
 
-**Status, November 2026:** items 1-10 are done and `v0.1.0` is tagged, so the CLI work in
-3D Review and Fire can start. This is step 1 of the Asset Check rollout. Where the build departed
+**Status, 5 November 2026:** `v0.1.0` (items 1-10) is tagged and used by both CLIs. **0.2**
+(items 11-14) is on the `v0.2` branch, for the rule catalogs and Rule Editor: the design is the rules
+repo's `docs/rule-editor-plan.md`. Items 11-13 are done; 14 waits for the CLIs' ports.
+
+0.1 was step 1 of the Asset Check rollout. Where the build departed
 from this plan (a top-level `findings` in results, a wider cache key, how staged content is read),
 the commit for that item says why.
 
@@ -130,6 +133,22 @@ Do these in order. Each item says when it's done.
 
 10. **Tag `v0.1.0`** once item 9 passes. 3d-review-cli and fire-cli then depend on it with
     `git = "https://github.com/psmyles/asset-rules", tag = "v0.1.0"`.
+
+**0.2: rule catalogs and Rule Editor.**
+
+11. **`rules.json` version 2: `check` and `skip`.** **Done.** Files a version-2 file leaves out
+    resolve to `Resolution::Skipped`, which the CLIs don't report; `rules explain` says why.
+    Version 1 still loads; `check` or `skip` in it is an error.
+12. **The one JSON style** (`json::Node`, `Node::to_json`). **Done.** Every tool that writes
+    `rules.json` or a rules file writes the same bytes; exp-content-rules' 15 files come back byte for
+    byte.
+13. **Rule catalogs** (`catalog`): reading `rules-catalog.toml` and what `rules catalog` prints,
+    every check the format asks for, defaults and texts per base and case, placeholders, lenient
+    settings for the checkers and a strict check of a rules file for `rules check` and Rule Editor.
+    **Done.** Both CLIs' draft catalogs (copied into `tests/fixtures/catalogs/`) have no problems,
+    and every rules file in exp-content-rules checks clean against them.
+14. **Tag `v0.2.0`** once both CLIs are ported to their catalogs and build against this branch,
+    with anything the ports need (perhaps code generation for their `build.rs`) added first.
 
 ## API sketch
 

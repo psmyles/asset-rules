@@ -15,9 +15,11 @@
 //! - [`results`] is the format both CLIs write with `--results`.
 //! - [`git`] lists the staged files, the branch, and where to read each file's staged content.
 //! - [`cache`] keeps each file's results entry until something that decides it changes.
+//! - [`catalog`] reads each checker's rule catalog, and checks rules files against it.
 //! - [`json`] writes `rules.json` and rules files in the one style every tool uses.
 
 pub mod cache;
+pub mod catalog;
 mod check;
 mod digest;
 mod explain;

@@ -13,8 +13,17 @@ CLIs write.
 - **It is not the rules repo.** The rules repo is a separate git submodule that only the technical
   artist writes. It holds `rules.json` and the per-profile rules files. This crate reads that data;
   it doesn't contain it.
-- **It does not know what a rule means.** It hands each CLI the path of the rules file that
-  applies, and the CLI parses that file and runs the checks.
+- **It doesn't run checks.** It hands each CLI the path of the rules file that applies, and the
+  CLI runs the checks. Each CLI describes its rules in a catalog (`rules-catalog.toml`); this crate
+  reads catalogs and checks rules files against them, but the checks themselves are the CLI's.
+
+## What it holds
+
+- `rules.json`, versions 1 and 2 (`check` and `skip`): loading, `rules check`, resolution and
+  `rules explain`.
+- The results format both CLIs write, the cache, and git (the staged files and their content).
+- Rule catalogs (`catalog`): the format each CLI describes its rules in.
+- The one JSON style (`json`) every tool writes `rules.json` and rules files in.
 
 ## Using it
 
