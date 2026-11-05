@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "generator": "hand-written",
+  "profile": {
+    "name": "Not checked",
+    "rules": {
+      "texture.format": {"enabled": false},
+      "texture.max_size": {"enabled": false},
+      "texture.min_size": {"enabled": false},
+      "texture.power_of_two": {"enabled": false},
+      "texture.multiple_of_4": {"enabled": false},
+      "texture.square": {"enabled": false},
+      "texture.unused_alpha": {"enabled": false},
+      "texture.alpha_required": {"enabled": false},
+      "texture.bit_depth": {"enabled": false},
+      "texture.color_profile": {"enabled": false},
+      "texture.generation_metadata": {"enabled": false},
+      "texture.file_size": {"enabled": false},
+      "texture.psd_composite": {"enabled": false},
+      "texture.psb": {"enabled": false}
+    }
+  }
+}

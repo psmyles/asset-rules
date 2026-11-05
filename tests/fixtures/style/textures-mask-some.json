@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "generator": "hand-written",
+  "profile": {
+    "name": "Packed mask with emission, SOME (production)",
+    "rules": {
+      "texture.format": {
+        "severity": "error",
+        "params": {"allowed": ["png", "tga", "psd", "tiff", "jpg"]}
+      },
+      "texture.max_size": {
+        "severity": "warning",
+        "params": {"max": 2048},
+        "note": "CrimeCrew's import presets cap textures at 2048, so Unity imports a bigger image at 2048 anyway. The extra pixels only make the repository bigger."
+      },
+      "texture.min_size": {"enabled": false},
+      "texture.power_of_two": {"severity": "warning"},
+      "texture.multiple_of_4": {"enabled": false},
+      "texture.square": {"enabled": false},
+      "texture.unused_alpha": {"enabled": false},
+      "texture.alpha_required": {
+        "severity": "warning",
+        "note": "SOME keeps emission in the alpha channel."
+      },
+      "texture.bit_depth": {"severity": "warning", "params": {"allowed": [8], "palette": true}},
+      "texture.color_profile": {"severity": "warning"},
+      "texture.generation_metadata": {
+        "severity": "warning",
+        "note": "Team policy: strip AI generator data before committing art."
+      },
+      "texture.file_size": {"severity": "warning", "params": {"max_mb": 50}},
+      "texture.psd_composite": {"severity": "error"},
+      "texture.psb": {"severity": "error"}
+    }
+  }
+}

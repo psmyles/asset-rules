@@ -1,0 +1,158 @@
+{
+  "version": 1,
+  "mode": "advise",
+  "stages": ["production"],
+  "stage": "production",
+  "branches": [],
+  "requires": {"fire-cli": "0.7.0", "3d-review-cli": "0.9.0", "launcher": "0.3.0"},
+  "types": {
+    "texture": {
+      "tool": "fire-cli",
+      "extensions": [
+        "png", "tga", "psd", "psb", "tif", "tiff", "jpg", "jpeg", "exr", "hdr", "webp", "avif",
+        "heic", "heif", "bmp", "gif"
+      ]
+    },
+    "model": {"tool": "3d-review-cli", "extensions": ["fbx"]}
+  },
+  "profiles": [
+    {
+      "id": "outside-assets-texture",
+      "type": "texture",
+      "label": "Outside Assets (not checked)",
+      "names": ["*"],
+      "paths": [
+        "*", "[!A]*/**", "A/**", "A[!s]*/**", "As/**", "As[!s]*/**", "Ass/**", "Ass[!e]*/**",
+        "Asse/**", "Asse[!t]*/**", "Asset/**", "Asset[!s]*/**", "Assets?*/**"
+      ],
+      "rules": {"*": "textures/not-checked.json"}
+    },
+    {
+      "id": "third-party-texture",
+      "type": "texture",
+      "label": "Third-party or editor-only (not checked)",
+      "names": ["*"],
+      "paths": [
+        "Assets/Bakery/**", "Assets/External_Tools/**", "Assets/HoudiniEngineAssetCache/**",
+        "Assets/Packages/**", "Assets/Plugins/**", "Assets/SceneTemplateAssets/**",
+        "Assets/TextMesh Pro/**", "Assets/ThirdParty/**", "Assets/Wwise/**", "Assets/**/Editor/**"
+      ],
+      "rules": {"*": "textures/not-checked.json"}
+    },
+    {
+      "id": "baked-lighting",
+      "type": "texture",
+      "label": "Baked lighting (not checked)",
+      "names": ["Lightmap-*", "ReflectionProbe-*", "*_LM[0-9]*", "*_LMA[0-9]*"],
+      "rules": {"*": "textures/not-checked.json"}
+    },
+    {
+      "id": "ui-texture",
+      "type": "texture",
+      "label": "UI texture",
+      "names": ["*"],
+      "paths": ["Assets/Content/UICanvas/**"],
+      "rules": {"production": "textures/ui.json"}
+    },
+    {
+      "id": "vat-texture",
+      "type": "texture",
+      "label": "Houdini VAT texture",
+      "names": ["T_*_VAT"],
+      "rules": {"production": "textures/vat.json"}
+    },
+    {
+      "id": "vfx-texture",
+      "type": "texture",
+      "label": "VFX texture",
+      "names": ["T_fx_*"],
+      "rules": {"production": "textures/vfx.json"}
+    },
+    {
+      "id": "mask",
+      "type": "texture",
+      "label": "Mask",
+      "names": ["T_*_M*"],
+      "rules": {"production": "textures/mask.json"}
+    },
+    {
+      "id": "mask-some",
+      "type": "texture",
+      "label": "Packed mask with emission (SOME)",
+      "names": ["T_*_SOME*"],
+      "rules": {"production": "textures/mask-some.json"}
+    },
+    {
+      "id": "mask-som",
+      "type": "texture",
+      "label": "Packed mask (SOM)",
+      "names": ["T_*_SOM*"],
+      "rules": {"production": "textures/mask-som.json"}
+    },
+    {
+      "id": "normal-map",
+      "type": "texture",
+      "label": "Normal map",
+      "names": ["T_*_N*"],
+      "rules": {"production": "textures/normal-map.json"}
+    },
+    {
+      "id": "base-color",
+      "type": "texture",
+      "label": "Base colour",
+      "names": ["T_*_D*"],
+      "rules": {"production": "textures/base-color.json"}
+    },
+    {
+      "id": "outside-assets-model",
+      "type": "model",
+      "label": "Outside Assets (not checked)",
+      "names": ["*"],
+      "paths": [
+        "*", "[!A]*/**", "A/**", "A[!s]*/**", "As/**", "As[!s]*/**", "Ass/**", "Ass[!e]*/**",
+        "Asse/**", "Asse[!t]*/**", "Asset/**", "Asset[!s]*/**", "Assets?*/**"
+      ],
+      "rules": {"*": "models/not-checked.json"}
+    },
+    {
+      "id": "third-party-model",
+      "type": "model",
+      "label": "Third-party or editor-only (not checked)",
+      "names": ["*"],
+      "paths": [
+        "Assets/Bakery/**", "Assets/External_Tools/**", "Assets/HoudiniEngineAssetCache/**",
+        "Assets/Packages/**", "Assets/Plugins/**", "Assets/SceneTemplateAssets/**",
+        "Assets/TextMesh Pro/**", "Assets/ThirdParty/**", "Assets/Wwise/**", "Assets/**/Editor/**"
+      ],
+      "rules": {"*": "models/not-checked.json"}
+    },
+    {
+      "id": "shadow-caster",
+      "type": "model",
+      "label": "Shadow caster",
+      "names": ["*ShadowCaster"],
+      "rules": {"production": "models/shadow-caster.json"}
+    },
+    {
+      "id": "static-mesh",
+      "type": "model",
+      "label": "Static mesh",
+      "names": ["SM_*"],
+      "rules": {"production": "models/static-mesh.json"}
+    },
+    {
+      "id": "skinned-mesh",
+      "type": "model",
+      "label": "Skinned mesh",
+      "names": ["SK_*"],
+      "rules": {"production": "models/skinned-mesh.json"}
+    },
+    {
+      "id": "animation",
+      "type": "model",
+      "label": "Animation",
+      "names": ["AN_*", "*@*"],
+      "rules": {"production": "models/animation.json"}
+    }
+  ]
+}
