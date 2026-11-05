@@ -8,8 +8,9 @@
 //! does not know what a rule means: it hands each CLI the path of the rules file that applies,
 //! and the CLI parses that file and runs the checks.
 //!
-//! - [`Rules::load`] reads `rules.json`; [`Rules::check`] lists the problems in it, for each CLI's
-//!   `rules check` command.
+//! - [`Rules::load`] reads `rules.json`; [`Rules::check`] lists the problems in it, and
+//!   [`Rules::check_rules_files`] those in a checker's rules files, read against its catalog, for
+//!   each CLI's `rules check` command.
 //! - [`resolve`] says which type, profile, stage and rules file apply to a file; [`explain`]
 //!   says why, for each CLI's `rules explain` command.
 //! - [`results`] is the format both CLIs write with `--results`.

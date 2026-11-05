@@ -4,9 +4,12 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use asset_rules::Rules;
 use asset_rules::catalog::{Catalog, CatalogError, fill, placeholders};
 use asset_rules::results::Severity;
 use serde_json::{Value, json};
+
+mod common;
 
 fn fixture(name: &str) -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -152,17 +155,10 @@ fn a_rules_repo_has_no_problems_against_the_catalogs_when_asked() {
     let Some(dir) = std::env::var_os("ASSET_RULES_STYLE_DIR") else {
         return;
     };
-    let rules = asset_rules::Rules::load(&PathBuf::from(dir).join("rules.json")).unwrap();
-    let catalogs: BTreeMap<&str, Catalog> =
-        BTreeMap::from([("fire-cli", fire()), ("3d-review-cli", review())]);
-    for profile in rules.profiles() {
-        let catalog = &catalogs[rules.types()[&profile.kind].tool.as_str()];
-        for file in profile.rules.values() {
-            let doc: Value =
-                serde_json::from_str(&fs::read_to_string(rules.file_path(file)).unwrap()).unwrap();
-            let found = catalog.check_rules_file(&doc);
-            assert!(found.is_empty(), "{file}: {found:#?}");
-        }
+    let rules = Rules::load(&PathBuf::from(dir).join("rules.json")).unwrap();
+    for catalog in [fire(), review()] {
+        let found = rules.check_rules_files(&catalog);
+        assert!(found.is_empty(), "{}: {found:#?}", catalog.tool);
     }
 }
 
@@ -527,4 +523,47 @@ fn code_names_come_from_the_id_unless_named() {
         &problems(&clash, None),
         "its code name \"MaxSize\" is also rule",
     );
+}
+
+#[test]
+fn rules_check_reads_a_checkers_own_rules_files_against_its_catalog() {
+    let dir = common::temp_dir();
+    let rules_json = common::write_rules(&dir, &common::sketch());
+    // The texture profile's file: a misspelt rule, and a value out of range.
+    dir.write(
+        "textures/normal.json",
+        r#"{"version": 1, "profile": {"name": "Normal map", "rules": {
+            "texture.max_sise": {}, "texture.max_size": {"params": {"max": 0}}}}}"#,
+    );
+    // A model rules file is 3d-review-cli's, so fire-cli's catalog doesn't read it.
+    dir.write(
+        "models/character.json",
+        r#"{"version": 1, "profile": {"rules": {"geometry.ngons": {}}}}"#,
+    );
+    let rules = Rules::load(&rules_json).expect("load");
+    let found = |catalog: &Catalog| -> Vec<String> {
+        rules
+            .check_rules_files(catalog)
+            .iter()
+            .map(ToString::to_string)
+            .collect()
+    };
+    assert_eq!(
+        found(&fire()),
+        [
+            r#"error: textures/normal.json rules["texture.max_sise"]: fire-cli has no rule "texture.max_sise""#,
+            r#"error: textures/normal.json rules["texture.max_size"].params.max: 0 is less than the least allowed, 1"#,
+        ]
+    );
+
+    // A file that isn't JSON says so; one that isn't there is left to `Rules::check`.
+    dir.write("textures/normal.json", "{");
+    let problems = found(&fire());
+    assert_eq!(problems.len(), 1, "{problems:?}");
+    assert!(
+        problems[0].starts_with("error: textures/normal.json: isn't valid JSON"),
+        "{problems:?}"
+    );
+    fs::remove_file(dir.path().join("textures/normal.json")).expect("remove");
+    assert!(found(&fire()).is_empty());
 }

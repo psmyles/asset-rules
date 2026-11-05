@@ -6,6 +6,7 @@ use std::fmt;
 use serde_json::{Map, Value};
 
 use crate::Pattern;
+use crate::catalog::Catalog;
 use crate::rules::{ANY_STAGE, CHECKERS, Profile, Rules, SKIP_VERSION, TOOLS};
 use crate::version::Version;
 
@@ -65,6 +66,10 @@ pub enum ProblemKind {
     NeverMatches,
     /// A field that needs a newer `version` than the file has: `check` or `skip` in version 1.
     NeedsNewerVersion,
+    /// A rules file that can't be read, or doesn't fit its checker's catalog: a rule the checker
+    /// doesn't have, a parameter of the wrong kind or out of range, ... (see
+    /// [`Rules::check_rules_files`]).
+    RulesFileInvalid,
 }
 
 impl ProblemKind {
@@ -119,6 +124,57 @@ impl Rules {
         checker.check_and_skip();
         checker.profiles();
         checker.out
+    }
+
+    /// The problems in the rules files `catalog`'s checker reads, each read against the catalog
+    /// ([`Catalog::check_rules_file`]): every file named by a profile of a type that checker
+    /// checks, once, in the order profiles name them. A file that isn't there is left to
+    /// [`Rules::check`], which reports it.
+    ///
+    /// Each checker's `rules check` adds these to [`Rules::check`]'s, for its own rules files.
+    pub fn check_rules_files(&self, catalog: &Catalog) -> Vec<Problem> {
+        let mut out = Vec::new();
+        let mut seen: Vec<&str> = Vec::new();
+        let problem = |at: String, message: String| Problem {
+            kind: ProblemKind::RulesFileInvalid,
+            at,
+            message,
+        };
+        for profile in self.profiles() {
+            let ours = self
+                .types()
+                .get(&profile.kind)
+                .is_some_and(|kind| kind.tool == catalog.tool);
+            if !ours {
+                continue;
+            }
+            for file in profile.rules.values() {
+                if seen.contains(&file.as_str()) {
+                    continue;
+                }
+                seen.push(file);
+                let path = self.file_path(file);
+                if !path.is_file() {
+                    continue;
+                }
+                let doc = std::fs::read(&path)
+                    .map_err(|error| format!("can't be read: {error}"))
+                    .and_then(|bytes| {
+                        serde_json::from_slice::<Value>(&bytes)
+                            .map_err(|error| format!("isn't valid JSON: {error}"))
+                    });
+                match doc {
+                    Err(message) => out.push(problem(file.clone(), message)),
+                    Ok(doc) => out.extend(
+                        catalog
+                            .check_rules_file(&doc)
+                            .into_iter()
+                            .map(|found| problem(format!("{file} {}", found.at), found.message)),
+                    ),
+                }
+            }
+        }
+        out
     }
 }
 
