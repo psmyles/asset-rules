@@ -154,7 +154,11 @@ Do these in order. Each item says when it's done.
     - `codegen`: what a CLI's `build.rs` generates from its catalog (`RuleId`, typed parameters,
       `Found` with each rule's measures and cases). The code for both draft catalogs is kept in
       `tests/fixtures/codegen/`, so the tests compile it.
-15. **Tag `v0.2.0`** once both CLIs are ported to their catalogs and build against this branch.
+    - A whole number written `6.0` is a count (3D Review's profile writer writes counts that way).
+    **Done:** fire-cli and 3d-review-cli are both ported (their `catalog` branches) and build
+    against this branch.
+15. **Tag `v0.2.0`:** set `version = "0.2.0"` in `Cargo.toml`, push, tag; then both CLIs depend on
+    the tag and commit their `Cargo.lock`.
 
 ## API sketch
 
