@@ -6,7 +6,7 @@ use std::path::{Component, Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use crate::{BranchStage, Profile, Rules};
+use crate::{BranchStage, Profile, Rules, Skip};
 
 /// What resolution needs to know besides the file's path.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -55,11 +55,27 @@ impl StageFrom {
     }
 }
 
+/// Why a file of a known type isn't looked at (`rules.json` version 2).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SkippedBy {
+    /// Its repository path matches none of `check`.
+    Check,
+    /// It matches `skip[i]`.
+    Skip(usize),
+}
+
 /// The answer to "which rules apply to this file?".
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Resolution {
     /// No type has the file's extension, so Asset Check doesn't look at it.
     Ignored,
+    /// The file has a type, but `check` or `skip` leaves it out: Asset Check doesn't look at it,
+    /// and the CLIs don't report it.
+    Skipped {
+        /// The type, a key of [`Rules::types`].
+        kind: String,
+        by: SkippedBy,
+    },
     /// The file has a type, but no profile of that type matches it. The CLI reports this as rule
     /// `file.no_profile`.
     Unmatched {
@@ -93,16 +109,24 @@ pub struct Resolved {
 /// match it.
 ///
 /// 1. **Type:** the one whose `extensions` include the file's, compared case-insensitively.
-/// 2. **Profile:** the first of that type, in file order, with a `names` pattern matching the
+/// 2. **Skipped?** Not if `check` is absent or one of its patterns matches the repository path,
+///    and no `skip` entry matches ([`skipped_by`]).
+/// 3. **Profile:** the first of that type, in file order, with a `names` pattern matching the
 ///    file name without its extension and, if it has `paths`, a pattern matching the
 ///    repository-relative path. Matching is case-sensitive.
-/// 3. **Stage:** from the branch, else the profile, else the project ([`StageFrom`]).
-/// 4. **Rules file:** the profile's file for that stage, else its `"*"` file.
+/// 4. **Stage:** from the branch, else the profile, else the project ([`StageFrom`]).
+/// 5. **Rules file:** the profile's file for that stage, else its `"*"` file.
 pub fn resolve(rules: &Rules, ctx: &Context, path: &Path) -> Resolution {
     let file = FilePath::new(&ctx.repo_root, path);
     let Some(kind) = file_type(rules, &file) else {
         return Resolution::Ignored;
     };
+    if let Some(by) = skipped_by(rules, &file) {
+        return Resolution::Skipped {
+            kind: kind.to_owned(),
+            by,
+        };
+    }
     let Some(profile) = rules
         .profiles()
         .iter()
@@ -191,6 +215,41 @@ pub(crate) fn file_type<'a>(rules: &'a Rules, file: &FilePath) -> Option<&'a str
         .iter()
         .find(|(_, file_type)| file_type.extensions.iter().any(|e| e == extension))
         .map(|(name, _)| name.as_str())
+}
+
+/// Why `check` or `skip` leaves the file out, if they do.
+///
+/// `check` is matched against the repository path; a file outside the repository has none, so
+/// `check` doesn't leave it out. A `skip` entry's `paths` can't match such a file either.
+pub(crate) fn skipped_by(rules: &Rules, file: &FilePath) -> Option<SkippedBy> {
+    if let (Some(check), Some(relative)) = (rules.check_paths(), &file.relative)
+        && !check.iter().any(|pattern| pattern.is_match(relative))
+    {
+        return Some(SkippedBy::Check);
+    }
+    rules
+        .skip()
+        .iter()
+        .position(|skip| skip_matches(skip, file))
+        .map(SkippedBy::Skip)
+}
+
+/// Whether a `skip` entry matches: its `names` (if any) and its `paths` (if any). An entry with
+/// neither matches nothing.
+pub(crate) fn skip_matches(skip: &Skip, file: &FilePath) -> bool {
+    if skip.names.is_none() && skip.paths.is_none() {
+        return false;
+    }
+    let names = skip
+        .names
+        .as_ref()
+        .is_none_or(|names| names.iter().any(|pattern| pattern.is_match(&file.stem)));
+    let paths = match (&skip.paths, &file.relative) {
+        (None, _) => true,
+        (Some(_), None) => false,
+        (Some(paths), Some(relative)) => paths.iter().any(|pattern| pattern.is_match(relative)),
+    };
+    names && paths
 }
 
 pub(crate) fn names_match(profile: &Profile, file: &FilePath) -> bool {

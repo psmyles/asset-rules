@@ -5,7 +5,8 @@ use std::fmt;
 
 use serde_json::{Map, Value};
 
-use crate::rules::{ANY_STAGE, CHECKERS, Profile, Rules, TOOLS};
+use crate::Pattern;
+use crate::rules::{ANY_STAGE, CHECKERS, Profile, Rules, SKIP_VERSION, TOOLS};
 use crate::version::Version;
 
 /// How serious a [`Problem`] is.
@@ -59,8 +60,11 @@ pub enum ProblemKind {
     /// A rules file that doesn't exist.
     RulesFileNotFound,
     /// A profile that can never match: it has nothing to match with, or an earlier profile of the
-    /// same type matches every file it would.
+    /// same type matches every file it would. Also a `skip` entry with nothing to match with, and
+    /// an empty `check`.
     NeverMatches,
+    /// A field that needs a newer `version` than the file has: `check` or `skip` in version 1.
+    NeedsNewerVersion,
 }
 
 impl ProblemKind {
@@ -112,6 +116,7 @@ impl Rules {
         checker.branches();
         checker.requires();
         checker.types();
+        checker.check_and_skip();
         checker.profiles();
         checker.out
     }
@@ -248,6 +253,85 @@ impl Checker<'_> {
         }
     }
 
+    /// A path pattern: a valid glob, written with `/`.
+    fn path_pattern(&mut self, at: &str, pattern: &Pattern) {
+        if let Some(error) = pattern.error() {
+            let message = format!(
+                "path pattern \"{}\" is not a valid glob: {error}",
+                pattern.as_str()
+            );
+            self.push(ProblemKind::InvalidGlob, at, message);
+        }
+        if pattern.as_str().contains('\\') {
+            let message = format!(
+                "path pattern \"{}\" contains \"\\\", but paths are matched with \"/\" \
+                 separators; write \"{}\"",
+                pattern.as_str(),
+                pattern.as_str().replace('\\', "/")
+            );
+            self.push(ProblemKind::Backslash, at, message);
+        }
+    }
+
+    fn name_pattern(&mut self, at: &str, pattern: &Pattern) {
+        if let Some(error) = pattern.error() {
+            let message = format!(
+                "name pattern \"{}\" is not a valid glob: {error}",
+                pattern.as_str()
+            );
+            self.push(ProblemKind::InvalidGlob, at, message);
+        }
+    }
+
+    /// Version 2's `check` and `skip`.
+    fn check_and_skip(&mut self) {
+        let rules = self.rules;
+        if rules.version() < SKIP_VERSION {
+            for (field, used) in [
+                ("check", rules.check_paths().is_some()),
+                ("skip", !rules.skip().is_empty()),
+            ] {
+                if used {
+                    let message = format!(
+                        "\"{field}\" needs \"version\": {SKIP_VERSION}; a tool that reads only \
+                         version 1 would check every file"
+                    );
+                    self.push(ProblemKind::NeedsNewerVersion, field, message);
+                }
+            }
+        }
+        if let Some(check) = rules.check_paths() {
+            if check.is_empty() {
+                let message = "is empty, so no file is checked; leave \"check\" out to check \
+                               every path"
+                    .to_owned();
+                self.push(ProblemKind::NeverMatches, "check", message);
+            }
+            for pattern in check {
+                self.path_pattern("check", pattern);
+            }
+        }
+        for (i, skip) in rules.skip().iter().enumerate() {
+            let at = skip_at(i, skip.label.as_deref());
+            if skip.names.is_none() && skip.paths.is_none() {
+                let message = "has neither \"names\" nor \"paths\", so it skips nothing".to_owned();
+                self.push(ProblemKind::NeverMatches, &at, message);
+            }
+            for (field, patterns) in [("names", &skip.names), ("paths", &skip.paths)] {
+                if patterns.as_ref().is_some_and(Vec::is_empty) {
+                    let message = format!("has an empty \"{field}\" list, so it skips nothing");
+                    self.push(ProblemKind::NeverMatches, &at, message);
+                }
+            }
+            for pattern in skip.names.iter().flatten() {
+                self.name_pattern(&at, pattern);
+            }
+            for pattern in skip.paths.iter().flatten() {
+                self.path_pattern(&at, pattern);
+            }
+        }
+    }
+
     fn profiles(&mut self) {
         let rules = self.rules;
         let mut ids: BTreeMap<&str, usize> = BTreeMap::new();
@@ -282,31 +366,10 @@ impl Checker<'_> {
             self.stage_files(&at, profile);
 
             for pattern in &profile.names {
-                if let Some(error) = pattern.error() {
-                    let message = format!(
-                        "name pattern \"{}\" is not a valid glob: {error}",
-                        pattern.as_str()
-                    );
-                    self.push(ProblemKind::InvalidGlob, &at, message);
-                }
+                self.name_pattern(&at, pattern);
             }
             for pattern in profile.paths.iter().flatten() {
-                if let Some(error) = pattern.error() {
-                    let message = format!(
-                        "path pattern \"{}\" is not a valid glob: {error}",
-                        pattern.as_str()
-                    );
-                    self.push(ProblemKind::InvalidGlob, &at, message);
-                }
-                if pattern.as_str().contains('\\') {
-                    let message = format!(
-                        "path pattern \"{}\" contains \"\\\", but paths are matched with \"/\" \
-                         separators; write \"{}\"",
-                        pattern.as_str(),
-                        pattern.as_str().replace('\\', "/")
-                    );
-                    self.push(ProblemKind::Backslash, &at, message);
-                }
+                self.path_pattern(&at, pattern);
             }
 
             self.never_matches(&at, index, profile);
@@ -386,6 +449,14 @@ fn covers(p: &Profile, q: &Profile) -> bool {
     names && paths
 }
 
+/// `skip[1] "Baked lighting"`, or `skip[1]` without a label.
+fn skip_at(index: usize, label: Option<&str>) -> String {
+    match label {
+        Some(label) => format!("skip[{index}] \"{label}\""),
+        None => format!("skip[{index}]"),
+    }
+}
+
 /// `profiles[2] "normal-map"`, or `profiles[2]` without an id.
 fn profile_at(index: usize, id: Option<&str>) -> String {
     match id {
@@ -420,8 +491,10 @@ pub(crate) struct UnknownField {
 }
 
 const TOP_FIELDS: &[&str] = &[
-    "version", "mode", "stages", "stage", "branches", "requires", "types", "profiles",
+    "version", "mode", "stages", "stage", "branches", "requires", "types", "profiles", "check",
+    "skip",
 ];
+const SKIP_FIELDS: &[&str] = &["label", "names", "paths"];
 const BRANCH_FIELDS: &[&str] = &["pattern", "stage"];
 const TYPE_FIELDS: &[&str] = &["tool", "extensions"];
 const PROFILE_FIELDS: &[&str] = &["id", "type", "label", "names", "paths", "stage", "rules"];
@@ -451,6 +524,10 @@ pub(crate) fn scan_unknown_fields(root: &Value) -> Vec<UnknownField> {
     for (i, profile) in objects(root, "profiles") {
         let at = profile_at(i, profile.get("id").and_then(Value::as_str));
         scan(profile, &at, PROFILE_FIELDS, &mut out);
+    }
+    for (i, skip) in objects(root, "skip") {
+        let at = skip_at(i, skip.get("label").and_then(Value::as_str));
+        scan(skip, &at, SKIP_FIELDS, &mut out);
     }
     out
 }

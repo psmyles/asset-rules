@@ -153,7 +153,7 @@ fn run(dir: &Path, name: &str, version: &str) -> Run {
     for file in repo.staged().unwrap() {
         let ours = |kind: &str| rules.types()[kind].tool == name;
         match resolve(&rules, &ctx, Path::new(&file.path)) {
-            Resolution::Ignored => {}
+            Resolution::Ignored | Resolution::Skipped { .. } => {}
             Resolution::Unmatched { kind } if ours(&kind) => {
                 results
                     .files

@@ -1,4 +1,5 @@
-//! `rules.json` v1: the model and its loader (AC5-AC8).
+//! `rules.json` versions 1 and 2: the model and its loader (AC5-AC8). Version 2 adds
+//! `check` and `skip`, which say which files Asset Check looks at at all.
 
 use std::collections::BTreeMap;
 use std::error::Error;
@@ -15,8 +16,11 @@ use crate::check::{UnknownField, scan_unknown_fields};
 use crate::digest::sha256;
 use crate::results::{Finding, Severity, ToolInfo, too_old};
 
-/// The `rules.json` version this crate reads.
-pub const RULES_VERSION: u64 = 1;
+/// The newest `rules.json` version this crate reads. It reads every version from 1 up.
+pub const RULES_VERSION: u64 = 2;
+
+/// The first version with `check` and `skip`.
+pub const SKIP_VERSION: u64 = 2;
 
 /// The key in a profile's `rules` for the file that applies to every stage without its own.
 pub const ANY_STAGE: &str = "*";
@@ -87,6 +91,19 @@ impl Profile {
     }
 }
 
+/// One of `skip[]`: files Asset Check doesn't look at, by name, by path, or both (version 2).
+///
+/// A file is skipped when one of its `names` matches the file name without its extension (or there
+/// are no `names`) and one of its `paths` matches its repository-relative path (or there are no
+/// `paths`). An entry with neither skips nothing; `rules check` reports it.
+#[derive(Clone, Debug, Default, Deserialize)]
+pub struct Skip {
+    /// What the entry is for, e.g. "Baked lighting", for `rules explain` and the editor.
+    pub label: Option<String>,
+    pub names: Option<Vec<Pattern>>,
+    pub paths: Option<Vec<Pattern>>,
+}
+
 /// A loaded `rules.json`, with the digest of its bytes.
 ///
 /// Loading checks only that the file can be used: that it is JSON of the right shape and version.
@@ -102,6 +119,8 @@ pub struct Rules {
 /// The fields of `rules.json`, as written. `version` is checked before this is read.
 #[derive(Clone, Debug, Deserialize)]
 struct Document {
+    #[serde(skip)]
+    version: u64,
     mode: Mode,
     stages: Vec<String>,
     stage: String,
@@ -111,6 +130,12 @@ struct Document {
     requires: BTreeMap<String, String>,
     types: BTreeMap<String, FileType>,
     profiles: Vec<Profile>,
+    /// Version 2: repository paths a file must match to be looked at. `None` looks at every path.
+    #[serde(default)]
+    check: Option<Vec<Pattern>>,
+    /// Version 2: files not looked at.
+    #[serde(default)]
+    skip: Vec<Skip>,
 }
 
 impl Rules {
@@ -128,19 +153,21 @@ impl Rules {
             source,
         };
         let value: Value = serde_json::from_slice(&bytes).map_err(json)?;
+        let mut version = RULES_VERSION;
         if value.is_object() {
-            match value.get("version") {
-                Some(version) if version.as_u64() == Some(RULES_VERSION) => {}
+            match value.get("version").map(|found| (found, found.as_u64())) {
+                Some((_, Some(found))) if (1..=RULES_VERSION).contains(&found) => version = found,
                 found => {
                     return Err(RulesError::Version {
                         path: path.to_owned(),
-                        found: found.map(Value::to_string),
+                        found: found.map(|(found, _)| found.to_string()),
                         requires: lenient_requires(&value),
                     });
                 }
             }
         }
         let mut doc: Document = serde_json::from_slice(&bytes).map_err(json)?;
+        doc.version = version;
         for file_type in doc.types.values_mut() {
             for extension in &mut file_type.extensions {
                 *extension = extension.to_lowercase();
@@ -206,6 +233,21 @@ impl Rules {
     /// The profiles, in file order; the first match wins.
     pub fn profiles(&self) -> &[Profile] {
         &self.doc.profiles
+    }
+
+    /// The file's `version`: 1 or 2.
+    pub fn version(&self) -> u64 {
+        self.doc.version
+    }
+
+    /// The repository paths a file must match to be looked at, or `None` for every path.
+    pub fn check_paths(&self) -> Option<&[Pattern]> {
+        self.doc.check.as_deref()
+    }
+
+    /// The files not looked at, in file order.
+    pub fn skip(&self) -> &[Skip] {
+        &self.doc.skip
     }
 
     pub(crate) fn unknown_fields(&self) -> &[UnknownField] {
@@ -282,7 +324,7 @@ impl fmt::Display for RulesError {
                 path, found: None, ..
             } => write!(
                 f,
-                "{} has no \"version\"; this tool reads version {RULES_VERSION}",
+                "{} has no \"version\"; this tool reads versions 1 to {RULES_VERSION}",
                 path.display()
             ),
             RulesError::Version {
@@ -291,7 +333,7 @@ impl fmt::Display for RulesError {
                 ..
             } => write!(
                 f,
-                "{} is version {found}, but this tool reads version {RULES_VERSION}; \
+                "{} is version {found}, but this tool reads versions 1 to {RULES_VERSION}; \
                  the tool may need updating",
                 path.display()
             ),

@@ -5,7 +5,9 @@
 
 use std::path::Path;
 
-use crate::resolve::{FilePath, branch_rule, file_type, names_match, paths_match, stage_of};
+use crate::resolve::{
+    FilePath, SkippedBy, branch_rule, file_type, names_match, paths_match, skipped_by, stage_of,
+};
 use crate::{ANY_STAGE, Context, Mode, Pattern, Profile, Rules, StageFrom};
 
 /// A plain-text account of how [`resolve`](crate::resolve) answers for `path`: its type, the
@@ -31,6 +33,11 @@ pub fn explain(rules: &Rules, ctx: &Context, path: &Path) -> String {
         file.extension.as_deref().unwrap_or_default()
     ));
     out.push(String::new());
+
+    if let Some(by) = skipped_by(rules, &file) {
+        skipped(rules, &file, by, &mut out);
+        return finish(out);
+    }
 
     let Some(profile) = profiles(rules, kind, &file, &mut out) else {
         let severity = match rules.mode() {
@@ -74,6 +81,51 @@ fn ignored(rules: &Rules, file: &FilePath, out: &mut Vec<String>) {
         out.push("    There are no types.".to_owned());
     } else {
         out.push(format!("    Types: {}.", types.join("; ")));
+    }
+}
+
+fn skipped(rules: &Rules, file: &FilePath, by: SkippedBy, out: &mut Vec<String>) {
+    let relative = file.relative.as_deref().unwrap_or_default();
+    match by {
+        SkippedBy::Check => {
+            let check: Vec<&str> = rules
+                .check_paths()
+                .unwrap_or_default()
+                .iter()
+                .map(Pattern::as_str)
+                .collect();
+            out.push("Skipped: not in \"check\", so it isn't checked.".to_owned());
+            out.push(format!(
+                "    \"{relative}\" matches none of \"check\": {}.",
+                check.join(", ")
+            ));
+        }
+        SkippedBy::Skip(index) => {
+            let skip = &rules.skip()[index];
+            let label = skip
+                .label
+                .as_deref()
+                .map(|label| format!(" \"{label}\""))
+                .unwrap_or_default();
+            out.push(format!(
+                "Skipped: skip[{index}]{label} matches, so it isn't checked."
+            ));
+            if let Some(names) = &skip.names {
+                let names: Vec<&str> = names.iter().map(Pattern::as_str).collect();
+                out.push(format!(
+                    "    The name \"{}\" matches one of: {}.",
+                    file.stem,
+                    names.join(", ")
+                ));
+            }
+            if let Some(paths) = &skip.paths {
+                let paths: Vec<&str> = paths.iter().map(Pattern::as_str).collect();
+                out.push(format!(
+                    "    The path \"{relative}\" matches one of: {}.",
+                    paths.join(", ")
+                ));
+            }
+        }
     }
 }
 

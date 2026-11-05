@@ -31,8 +31,8 @@ mod version;
 pub use check::{Level, Problem, ProblemKind};
 pub use explain::explain;
 pub use pattern::Pattern;
-pub use resolve::{Context, Resolution, Resolved, StageFrom, resolve};
+pub use resolve::{Context, Resolution, Resolved, SkippedBy, StageFrom, resolve};
 pub use rules::{
     ANY_STAGE, BranchStage, CHECKERS, FileType, Mode, Profile, RULES_VERSION, Rules, RulesError,
-    TOOLS,
+    SKIP_VERSION, Skip, TOOLS,
 };

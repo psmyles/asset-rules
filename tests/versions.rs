@@ -125,7 +125,7 @@ fn a_newer_rules_json_still_says_what_to_update() {
     let dir = temp_dir();
     let path = dir.write(
         "rules.json",
-        &json!({ "version": 2, "requires": { "3d-review-cli": "1.2.0" }, "profiles": "new shape" })
+        &json!({ "version": 3, "requires": { "3d-review-cli": "1.2.0" }, "profiles": "new shape" })
             .to_string(),
     );
     let error = Rules::load(&path).unwrap_err();

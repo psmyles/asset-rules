@@ -145,9 +145,9 @@ fn an_unknown_mode_is_a_json_error() {
 
 #[test]
 fn another_version_is_refused_before_its_shape_is_read() {
-    let error = load_text(r#"{ "version": 2, "something": "new" }"#).unwrap_err();
+    let error = load_text(r#"{ "version": 3, "something": "new" }"#).unwrap_err();
     assert!(
-        matches!(&error, RulesError::Version { found: Some(v), .. } if v == "2"),
+        matches!(&error, RulesError::Version { found: Some(v), .. } if v == "3"),
         "{error}"
     );
     assert!(error.to_string().contains("may need updating"), "{error}");

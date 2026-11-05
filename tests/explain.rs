@@ -226,6 +226,10 @@ fn explain_always_agrees_with_resolve() {
                 Resolution::Ignored => {
                     assert!(line("Ignored: ").is_some(), "{path} {branch:?}\n{text}")
                 }
+                Resolution::Skipped { kind, .. } => {
+                    assert_eq!(line("Type: "), Some(format!("Type: {kind}")));
+                    assert!(line("Skipped: ").is_some(), "{path} {branch:?}\n{text}");
+                }
                 Resolution::Unmatched { kind } => {
                     assert_eq!(line("Type: "), Some(format!("Type: {kind}")));
                     assert_eq!(line("Profile: "), Some("Profile: none matches".to_owned()));
