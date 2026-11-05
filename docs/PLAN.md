@@ -9,8 +9,9 @@ the commit for that item says why.
 
 Asset Check checks art assets (textures, models) against a technical artist's rules when they are
 committed to a Unity project, and tells the artist what is wrong, why, and how to fix it. The design is
-`asset-check-plan.md` in [psmyles/fire-decode](https://github.com/psmyles/fire-decode) (private). It
-moves to the rules repo later. Decision numbers below (AC1-AC19) refer to it.
+`docs/asset-check-plan.md` in the rules repo,
+[SandboxVR/exp-content-rules](https://github.com/SandboxVR/exp-content-rules) (private). Decision
+numbers below (AC1-AC19) refer to it.
 
 `asset-rules` is the **shared Rust crate** both checkers use (AC9): `fire-cli` (images, in fire's repo)
 and `3d-review-cli` (models, in 3D Review). It answers one question the same way for every caller (the
@@ -177,6 +178,7 @@ pub struct Cache { /* get / put / prune */ }
 
 ## References
 
-- `asset-check-plan.md` in psmyles/fire-decode: the whole design. AC5-AC10 and AC15 are this crate.
+- `docs/asset-check-plan.md` in SandboxVR/exp-content-rules: the whole design. AC5-AC10 and AC15 are
+  this crate.
 - 3D Review: `docs/cli.md`, the existing exit-code and `--report` conventions to match.
 - `docs/PLAN.md` in 3D Review and fire: the CLI work that consumes this crate.
