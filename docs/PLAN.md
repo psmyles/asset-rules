@@ -1,8 +1,8 @@
 # asset-rules - Work Plan
 
-**Status, 5 November 2026:** `v0.2.0` (items 11-15) is tagged and used by both CLIs: the rule
-catalogs, for Rule Editor (the design is the rules repo's `docs/rule-editor-plan.md`). `v0.1.0` was
-items 1-10.
+**Status, 6 November 2026:** `v0.2.1` (item 16) is tagged and used by both CLIs and Rule Editor.
+`v0.2.0` (items 11-15) was the rule catalogs, for Rule Editor (the design is the rules repo's
+`docs/rule-editor-plan.md`); `v0.1.0` was items 1-10.
 
 0.1 was step 1 of the Asset Check rollout. Where the build departed
 from this plan (a top-level `findings` in results, a wider cache key, how staged content is read),
@@ -159,6 +159,10 @@ Do these in order. Each item says when it's done.
     against this branch.
 15. **Tag `v0.2.0`:** set `version = "0.2.0"` in `Cargo.toml`, push, tag; then both CLIs depend on
     the tag and commit their `Cargo.lock`. **Done** (5 November 2026).
+16. **Tag `v0.2.1`: 3D Review's checker is `review3d-cli`.** PowerShell reads `3d-review-cli` as
+    the number `3d`, so it can't be run as typed. `CHECKERS` and `TOOLS` name `review3d-cli`, and
+    the old name isn't kept: it only shipped in 3D Review 0.9.0's pre-release builds. fire-cli,
+    review3d-cli and Rule Editor depend on the tag. **Done** (6 November 2026).
 
 ## API sketch
 

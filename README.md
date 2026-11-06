@@ -33,7 +33,7 @@ CLIs write.
 The CLIs depend on a tagged release:
 
 ```toml
-asset-rules = { git = "https://github.com/psmyles/asset-rules", tag = "v0.2.0" }
+asset-rules = { git = "https://github.com/psmyles/asset-rules", tag = "v0.2.1" }
 ```
 
 To build a CLI against unreleased changes, patch it from a `.cargo/config.toml` in the folder that

@@ -1,6 +1,6 @@
 [package]
 name = "asset-rules"
-version = "0.2.0"
+version = "0.2.1"
 description = "Which Asset Check rules apply to a file, and the results format the checkers write."
 edition = "2024"
 # The floor 3D Review builds at; development uses the latest stable (`rust-toolchain.toml`).
