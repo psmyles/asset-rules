@@ -32,7 +32,7 @@ fn a_file_resolved_by_its_path_and_branch() {
         r#"Assets/Art/Environment/SM_Rock.fbx
 
 Type: model
-    Files with the extension "fbx" are of type "model", which 3d-review-cli checks.
+    Files with the extension "fbx" are of type "model", which review3d-cli checks.
 
 Profile: Environment prop (environment-prop)
     The model profiles are tried in file order, and the first that matches wins:
@@ -55,7 +55,7 @@ fn a_file_whose_path_rules_out_a_profile_falls_to_the_project_stage() {
         r#"Assets/Art/Props/SM_Crate.fbx
 
 Type: model
-    Files with the extension "fbx" are of type "model", which 3d-review-cli checks.
+    Files with the extension "fbx" are of type "model", which review3d-cli checks.
 
 Profile: Prop (prop)
     The model profiles are tried in file order, and the first that matches wins:
@@ -79,7 +79,7 @@ fn a_detached_head_and_a_profile_stage() {
         r#"Assets/Characters/SK_Hero.fbx
 
 Type: model
-    Files with the extension "fbx" are of type "model", which 3d-review-cli checks.
+    Files with the extension "fbx" are of type "model", which review3d-cli checks.
 
 Profile: Character model (character-model)
     The model profiles are tried in file order, and the first that matches wins:

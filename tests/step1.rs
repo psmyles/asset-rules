@@ -134,7 +134,7 @@ struct Run {
     cached: usize,
 }
 
-/// What `fire-cli` or `3d-review-cli` will do for `--staged --rules rules/rules.json`.
+/// What `fire-cli` or `review3d-cli` will do for `--staged --rules rules/rules.json`.
 fn run(dir: &Path, name: &str, version: &str) -> Run {
     let repo = Repo::discover(dir).unwrap();
     let rules = Rules::load(&repo.root().join("rules/rules.json")).unwrap();
@@ -290,7 +290,7 @@ fn on_main() {
         "no profile matched ComfyUI_00042_"
     );
 
-    let review = run(project.path(), "3d-review-cli", "0.9.0");
+    let review = run(project.path(), "review3d-cli", "0.9.0");
     assert_eq!(
         summary(&review.results),
         [
@@ -336,7 +336,7 @@ fn on_main() {
     // Written and read back by whatever shows the results.
     let path = project
         .path()
-        .join(".git/asset-check/results-3d-review-cli.json");
+        .join(".git/asset-check/results-review3d-cli.json");
     review.results.write(&path).unwrap();
     assert_eq!(Results::read(&path).unwrap(), review.results);
 }
@@ -345,13 +345,13 @@ fn on_main() {
 fn a_second_run_reads_every_checked_file_from_the_cache() {
     let project = Project::new();
     project.stage();
-    let first = run(project.path(), "3d-review-cli", "0.9.0");
+    let first = run(project.path(), "review3d-cli", "0.9.0");
     assert_eq!(first.cached, 0);
-    let second = run(project.path(), "3d-review-cli", "0.9.0");
+    let second = run(project.path(), "review3d-cli", "0.9.0");
     assert_eq!(second.cached, 3);
     assert_eq!(second.results, first.results);
     // A new tool version checks everything again.
-    let updated = run(project.path(), "3d-review-cli", "0.9.1");
+    let updated = run(project.path(), "review3d-cli", "0.9.1");
     assert_eq!(updated.cached, 0);
 }
 
@@ -360,7 +360,7 @@ fn on_a_feature_branch_the_profile_then_the_project_stage_applies() {
     let project = Project::new();
     project.repo.git(&["checkout", "-q", "-b", "feature/rocks"]);
     project.stage();
-    let review = run(project.path(), "3d-review-cli", "0.9.0");
+    let review = run(project.path(), "review3d-cli", "0.9.0");
     assert_eq!(
         summary(&review.results),
         [
@@ -394,7 +394,7 @@ fn on_a_proto_branch_the_branch_outranks_the_profile() {
     let project = Project::new();
     project.repo.git(&["checkout", "-q", "-b", "proto/hero"]);
     project.stage();
-    let review = run(project.path(), "3d-review-cli", "0.9.0");
+    let review = run(project.path(), "review3d-cli", "0.9.0");
     let hero = &summary(&review.results)[2];
     assert_eq!(
         hero,
@@ -413,7 +413,7 @@ fn on_a_detached_head() {
     let project = Project::new();
     project.repo.git(&["checkout", "-q", "--detach"]);
     project.stage();
-    let review = run(project.path(), "3d-review-cli", "0.9.0");
+    let review = run(project.path(), "review3d-cli", "0.9.0");
     assert_eq!(review.results.context.branch, None);
     let stages: Vec<(Option<String>, Option<StageFrom>)> = review
         .results
@@ -468,7 +468,7 @@ fn only_added_and_changed_regular_files_are_checked() {
 fn a_tool_too_old_for_the_rules_says_so_once() {
     let project = Project::new();
     project.stage();
-    let review = run(project.path(), "3d-review-cli", "0.8.0");
+    let review = run(project.path(), "review3d-cli", "0.8.0");
     let rules: Vec<&str> = review
         .results
         .findings

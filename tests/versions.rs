@@ -8,7 +8,7 @@ use common::{sketch, temp_dir, write_rules};
 use serde_json::{Value, json};
 
 /// Loads `rules` from a folder that is removed straight away: `too_old` reads no rules file.
-/// The sketch requires fire-cli 0.1.0 and 3d-review-cli 0.9.0.
+/// The sketch requires fire-cli 0.1.0 and review3d-cli 0.9.0.
 fn load(rules: &Value) -> Rules {
     let dir = temp_dir();
     Rules::load(&write_rules(&dir, rules)).unwrap()
@@ -16,7 +16,7 @@ fn load(rules: &Value) -> Rules {
 
 fn review(version: &str) -> ToolInfo {
     ToolInfo {
-        name: "3d-review-cli".to_owned(),
+        name: "review3d-cli".to_owned(),
         version: version.to_owned(),
     }
 }
@@ -38,7 +38,7 @@ fn a_tool_that_is_too_old_gets_one_finding_saying_what_to_update() {
     assert_eq!(finding.title, "3D Review is too old");
     assert_eq!(
         finding.what,
-        "This is 3d-review-cli 0.8.2, but the rules need 0.9.0 or later."
+        "This is review3d-cli 0.8.2, but the rules need 0.9.0 or later."
     );
     assert_eq!(
         finding.how,
@@ -72,7 +72,7 @@ fn a_pre_release_of_the_required_version_is_too_old() {
 #[test]
 fn versions_compare_as_numbers_not_text() {
     let mut rules = sketch();
-    rules["requires"]["3d-review-cli"] = json!("0.10.0");
+    rules["requires"]["review3d-cli"] = json!("0.10.0");
     let rules = load(&rules);
     assert!(rules.too_old(&review("0.9.0")).is_some());
     assert!(rules.too_old(&review("0.10.0")).is_none());
@@ -81,7 +81,7 @@ fn versions_compare_as_numbers_not_text() {
 #[test]
 fn a_short_version_means_zeros() {
     let mut rules = sketch();
-    rules["requires"]["3d-review-cli"] = json!("0.9");
+    rules["requires"]["review3d-cli"] = json!("0.9");
     let rules = load(&rules);
     assert!(rules.too_old(&review("0.9.0")).is_none());
     assert!(rules.too_old(&review("0.8.9")).is_some());
@@ -105,7 +105,7 @@ fn too_old_is_an_error_in_enforce_mode() {
 #[test]
 fn rules_check_reports_a_requirement_that_isnt_a_version() {
     let mut rules = sketch();
-    rules["requires"]["3d-review-cli"] = json!("latest");
+    rules["requires"]["review3d-cli"] = json!("latest");
     let dir = temp_dir();
     let rules = Rules::load(&write_rules(&dir, &rules)).unwrap();
     let problems = rules.check();
@@ -113,7 +113,7 @@ fn rules_check_reports_a_requirement_that_isnt_a_version() {
         problems.iter().map(|p| (p.kind, p.at.as_str())).collect();
     assert_eq!(
         found,
-        [(ProblemKind::InvalidVersion, "requires \"3d-review-cli\"")]
+        [(ProblemKind::InvalidVersion, "requires \"review3d-cli\"")]
     );
     // And it never makes a tool "too old".
     assert_eq!(rules.too_old(&review("0.0.1")), None);
@@ -125,7 +125,7 @@ fn a_newer_rules_json_still_says_what_to_update() {
     let dir = temp_dir();
     let path = dir.write(
         "rules.json",
-        &json!({ "version": 3, "requires": { "3d-review-cli": "1.2.0" }, "profiles": "new shape" })
+        &json!({ "version": 3, "requires": { "review3d-cli": "1.2.0" }, "profiles": "new shape" })
             .to_string(),
     );
     let error = Rules::load(&path).unwrap_err();

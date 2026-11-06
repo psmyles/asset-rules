@@ -107,7 +107,7 @@ fn fixture() -> Rules {
 
 fn tool() -> ToolInfo {
     ToolInfo {
-        name: "3d-review-cli".to_owned(),
+        name: "review3d-cli".to_owned(),
         version: "0.9.0".to_owned(),
     }
 }

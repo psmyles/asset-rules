@@ -56,14 +56,14 @@ pub fn sketch() -> Value {
             { "pattern": "proto/*", "stage": "prototype" },
             { "pattern": "main", "stage": "production" }
         ],
-        "requires": { "fire-cli": "0.1.0", "3d-review-cli": "0.9.0" },
+        "requires": { "fire-cli": "0.1.0", "review3d-cli": "0.9.0" },
         "types": {
             "texture": {
                 "tool": "fire-cli",
                 "extensions": ["png", "tga", "psd", "psb", "tif", "tiff", "exr", "jpg", "jpeg",
                                "webp", "avif", "heic", "heif"]
             },
-            "model": { "tool": "3d-review-cli", "extensions": ["fbx"] }
+            "model": { "tool": "review3d-cli", "extensions": ["fbx"] }
         },
         "profiles": [
             {

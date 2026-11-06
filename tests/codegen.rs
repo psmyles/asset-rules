@@ -16,7 +16,7 @@ mod fire {
 
 mod review {
     #![allow(dead_code)]
-    include!("fixtures/codegen/3d-review-cli.rs");
+    include!("fixtures/codegen/review3d-cli.rs");
 }
 
 fn fixtures() -> PathBuf {
@@ -25,7 +25,7 @@ fn fixtures() -> PathBuf {
 
 #[test]
 fn the_kept_code_is_what_the_generator_writes() {
-    for tool in ["fire-cli", "3d-review-cli"] {
+    for tool in ["fire-cli", "review3d-cli"] {
         let catalog_path = fixtures().join(format!("catalogs/{tool}.toml"));
         let catalog = Catalog::from_toml(&fs::read_to_string(&catalog_path).unwrap()).unwrap();
         let code = codegen::rust(&catalog, &format!("../catalogs/{tool}.toml"));

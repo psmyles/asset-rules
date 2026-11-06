@@ -50,7 +50,7 @@ pub struct Results {
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ToolInfo {
-    /// `fire-cli` or `3d-review-cli`.
+    /// `fire-cli` or `review3d-cli`.
     pub name: String,
     pub version: String,
 }
@@ -300,7 +300,7 @@ pub(crate) fn too_old(tool: &ToolInfo, required: &str, severity: Severity) -> Op
 fn product(tool: &str) -> &str {
     match tool {
         "fire-cli" => "Fire",
-        "3d-review-cli" => "3D Review",
+        "review3d-cli" => "3D Review",
         "launcher" => "Launcher",
         other => other,
     }

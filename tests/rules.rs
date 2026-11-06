@@ -63,8 +63,8 @@ fn the_sketch_loads_and_has_no_problems() {
     assert_eq!(rules.stages(), ["prototype", "production"]);
     assert_eq!(rules.stage(), "prototype");
     assert_eq!(rules.branches()[0].pattern.as_str(), "proto/*");
-    assert_eq!(rules.requires()["3d-review-cli"], "0.9.0");
-    assert_eq!(rules.types()["model"].tool, "3d-review-cli");
+    assert_eq!(rules.requires()["review3d-cli"], "0.9.0");
+    assert_eq!(rules.types()["model"].tool, "review3d-cli");
     assert_eq!(rules.profiles()[1].id, "prop-model");
     assert_eq!(rules.dir(), dir.path());
     assert_eq!(

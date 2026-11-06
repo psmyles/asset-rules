@@ -26,11 +26,11 @@ pub const SKIP_VERSION: u64 = 2;
 pub const ANY_STAGE: &str = "*";
 
 /// The checkers a type can name as its `tool`.
-pub const CHECKERS: &[&str] = &["fire-cli", "3d-review-cli"];
+pub const CHECKERS: &[&str] = &["fire-cli", "review3d-cli"];
 
 /// The tools `requires` can name: the checkers, and the Launcher, whose version setup checks
 /// (AC16).
-pub const TOOLS: &[&str] = &["fire-cli", "3d-review-cli", "launcher"];
+pub const TOOLS: &[&str] = &["fire-cli", "review3d-cli", "launcher"];
 
 /// Whether findings only advise the artist or can block a commit (AC2).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]

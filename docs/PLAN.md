@@ -17,7 +17,7 @@ committed to a Unity project, and tells the artist what is wrong, why, and how t
 numbers below (AC1-AC19) refer to it.
 
 `asset-rules` is the **shared Rust crate** both checkers use (AC9): `fire-cli` (images, in fire's repo)
-and `3d-review-cli` (models, in 3D Review). It answers one question the same way for every caller (the
+and `review3d-cli` (models, in 3D Review). It answers one question the same way for every caller (the
 git hook, the Fork command, the Unity tool, CI): *which rules apply to this file?* It also defines the
 results format both CLIs write.
 
@@ -83,7 +83,7 @@ Do these in order. Each item says when it's done.
      (`checked`/`unreadable`/`skipped`), `problem`, `findings[]`.
    - **Per finding:** `rule`, `severity` (`error`/`warning`/`info`), `title`, `what`, `why`, `how`,
      `note`, `measured`, `limit`, `objects[]`, and `fix`, which is always `null` until fixes ship.
-   - **Writing:** atomic (temporary file, then rename), the way 3d-review-cli writes its `--report`.
+   - **Writing:** atomic (temporary file, then rename), the way review3d-cli writes its `--report`.
    - **An exit-code helper:** 0 when nothing is at warning level or worse; 1 when something was found or
      a file couldn't be checked. 2 (usage error) stays each CLI's own.
    - *Done when* a round-trip test passes and the JSON matches the sketch.
@@ -131,7 +131,7 @@ Do these in order. Each item says when it's done.
    - an LFS file;
    - a partially staged file.
 
-10. **Tag `v0.1.0`** once item 9 passes. 3d-review-cli and fire-cli then depend on it with
+10. **Tag `v0.1.0`** once item 9 passes. review3d-cli and fire-cli then depend on it with
     `git = "https://github.com/psmyles/asset-rules", tag = "v0.1.0"`.
 
 **0.2: rule catalogs and Rule Editor.**
@@ -155,7 +155,7 @@ Do these in order. Each item says when it's done.
       `Found` with each rule's measures and cases). The code for both draft catalogs is kept in
       `tests/fixtures/codegen/`, so the tests compile it.
     - A whole number written `6.0` is a count (3D Review's profile writer writes counts that way).
-    **Done:** fire-cli and 3d-review-cli are both ported (their `catalog` branches) and build
+    **Done:** fire-cli and review3d-cli are both ported (their `catalog` branches) and build
     against this branch.
 15. **Tag `v0.2.0`:** set `version = "0.2.0"` in `Cargo.toml`, push, tag; then both CLIs depend on
     the tag and commit their `Cargo.lock`. **Done** (5 November 2026).

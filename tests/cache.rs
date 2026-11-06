@@ -152,7 +152,7 @@ fn changing_any_one_key_part_misses() {
                 BLOB,
                 &resolved(),
                 DIGEST,
-                &other_tool("3d-review-cli", "0.1.0"),
+                &other_tool("review3d-cli", "0.1.0"),
             ),
         ),
         (

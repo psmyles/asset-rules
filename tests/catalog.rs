@@ -27,7 +27,7 @@ fn fire() -> Catalog {
 }
 
 fn review() -> Catalog {
-    load("3d-review-cli")
+    load("review3d-cli")
 }
 
 /// The messages of every problem, as `at: message`.
@@ -535,7 +535,7 @@ fn rules_check_reads_a_checkers_own_rules_files_against_its_catalog() {
         r#"{"version": 1, "profile": {"name": "Normal map", "rules": {
             "texture.max_sise": {}, "texture.max_size": {"params": {"max": 0}}}}}"#,
     );
-    // A model rules file is 3d-review-cli's, so fire-cli's catalog doesn't read it.
+    // A model rules file is review3d-cli's, so fire-cli's catalog doesn't read it.
     dir.write(
         "models/character.json",
         r#"{"version": 1, "profile": {"rules": {"geometry.ngons": {}}}}"#,

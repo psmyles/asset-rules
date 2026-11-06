@@ -1,4 +1,4 @@
-//! The shared core of Asset Check's two checkers, `fire-cli` (images) and `3d-review-cli`
+//! The shared core of Asset Check's two checkers, `fire-cli` (images) and `review3d-cli`
 //! (models).
 //!
 //! It answers one question the same way for every caller: *which rules apply to this file?*

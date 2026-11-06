@@ -3,7 +3,7 @@
 The shared Rust crate behind Asset Check, which checks art assets (textures, models) against a
 technical artist's rules when they are committed to a Unity project.
 
-Both checkers depend on it: `fire-cli` (images, in fire) and `3d-review-cli` (models, in
+Both checkers depend on it: `fire-cli` (images, in fire) and `review3d-cli` (models, in
 3D Review). It answers one question the same way for every caller (the git hook, the Fork command,
 the Unity tool, CI): **which rules apply to this file?** It also defines the results format both
 CLIs write.
